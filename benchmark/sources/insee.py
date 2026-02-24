@@ -1,6 +1,9 @@
 # benchmark/sources/insee.py
+import logging
 import httpx
 from benchmark.base import BenchmarkSource, RatiosBruts
+
+logger = logging.getLogger(__name__)
 
 
 class InseeSource(BenchmarkSource):
@@ -31,7 +34,8 @@ class InseeSource(BenchmarkSource):
                 delai_clients_jours=data.get("delai_clients"),
                 delai_fournisseurs_jours=data.get("delai_fournisseurs"),
             )
-        except Exception:
+        except Exception as exc:
+            logger.warning("INSEE fetch failed for NAF %s: %s", code_naf, exc)
             return None
 
     def _fetch_esane(self, naf_2: str, annee: int) -> dict | None:

@@ -33,17 +33,31 @@ def parse_fec(fec_path: str) -> DonneesFinancieres:
         fec_path,
         sep="\t",
         encoding="latin1",
-        dtype={"CompteNum": str, "Montant": str},
+        dtype={"CompteNum": str, "EcritureDate": str, "Montant": str},
         decimal=","
     )
 
-    df["Montant"] = (
-        df["Montant"]
-        .str.replace(r"\s", "", regex=True)
-        .str.replace(",", ".")
-        .pipe(pd.to_numeric, errors="coerce")
-        .fillna(0)
-    )
+    # ── Normalisation du montant ───────────────────────────────────────────
+    # Deux formats coexistent :
+    #   · Standard DGFiP : colonnes Debit/Credit séparées, pas de colonne Montant
+    #   · Certains logiciels : colonne Montant précomputée
+    if "Montant" not in df.columns:
+        for col in ("Debit", "Credit"):
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        # Comptes à solde normalement créditeur : capitaux/dettes (1x), fourn (40x), produits (7x)
+        credit_normal = df["CompteNum"].str.match(r"^(1|40|7)")
+        df["Montant"] = df["Debit"] - df["Credit"]
+        df.loc[credit_normal, "Montant"] = (
+            df.loc[credit_normal, "Credit"] - df.loc[credit_normal, "Debit"]
+        )
+    else:
+        df["Montant"] = (
+            df["Montant"]
+            .str.replace(r"\s", "", regex=True)
+            .str.replace(",", ".")
+            .pipe(pd.to_numeric, errors="coerce")
+            .fillna(0)
+        )
 
     ca           = _somme(df, MAPPING_PCG["chiffre_affaires"])
     achats       = _somme(df, MAPPING_PCG["achats_consommes"])

@@ -118,7 +118,7 @@ def detect_signals_from_rules(ratios: Ratios) -> list[Signal]:
 
     # ── OPTIMISATION ──────────────────────────────────────────────────────────
 
-    if ratios.taux_resultat_net > 5 and ratios.rentabilite_capitaux > 15:
+    if ratios.taux_resultat_net > 5 and (ratios.rentabilite_capitaux or 0) > 15:
         signals.append(Signal(
             type=TypeSignal.OPTIMISATION, gravite=Gravite.FAIBLE,
             code="OPTIMISATION_FISCALE",

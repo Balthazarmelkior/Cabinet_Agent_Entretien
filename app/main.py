@@ -2,6 +2,7 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import html as html_lib
 import streamlit as st
 import tempfile
 from pathlib import Path
@@ -155,6 +156,7 @@ def render_form():
 def run_analysis(fichier, nom_client, code_naf, catalogue_path):
     from graph import build_graph
 
+    tmp_path = None
     with tempfile.NamedTemporaryFile(delete=False, suffix=Path(fichier.name).suffix) as tmp:
         tmp.write(fichier.read())
         tmp_path = tmp.name
@@ -173,7 +175,7 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path):
 
     try:
         graph       = build_graph()
-        final_state = None
+        final_state = {}
         step_idx    = 0
 
         for event in graph.stream({
@@ -185,7 +187,10 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path):
                 pct, label = etapes[step_idx]
                 bar.progress(pct, text=label)
                 step_idx += 1
-            final_state = list(event.values())[0]
+            # Chaque event = {node_name: {clés mises à jour par ce node}}
+            # On accumule toutes les clés pour reconstituer l'état complet.
+            for node_output in event.values():
+                final_state.update(node_output)
 
         bar.progress(1.0, text="✅ Analyse terminée !")
         status.empty()
@@ -200,6 +205,10 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path):
         bar.empty()
         st.error(f"❌ Erreur lors de l'analyse : {e}")
         raise
+
+    finally:
+        if tmp_path:
+            Path(tmp_path).unlink(missing_ok=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -283,8 +292,8 @@ def render_dashboard():
             src = benchmark.ratios[0].source if benchmark.ratios else "—"
             st.markdown(f"""
             <div style="background:#EEF2FF;border-radius:10px;padding:.75rem 1.2rem;margin-bottom:1rem;font-size:.85rem;">
-                <b>{benchmark.libelle_secteur}</b> · Référence {benchmark.annee_reference}
-                · {benchmark.taille_entreprise} · Source : {src}
+                <b>{html_lib.escape(benchmark.libelle_secteur)}</b> · Référence {benchmark.annee_reference}
+                · {benchmark.taille_entreprise} · Source : {html_lib.escape(src)}
             </div>""", unsafe_allow_html=True)
 
             col_r, col_t = st.columns([1, 1], gap="large")

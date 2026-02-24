@@ -97,7 +97,8 @@ def generate_word_doc(fiche: FicheEntretien, output) -> None:
     # ── Conclusion ────────────────────────────────────────────────────────────
     doc.add_heading("Comment conclure le rendez-vous", level=1)
     p_ccl = doc.add_paragraph(fiche.conclusion_conseillee)
-    p_ccl.runs[0].italic = True
+    if p_ccl.runs:
+        p_ccl.runs[0].italic = True
 
     # Sauvegarde
     if isinstance(output, (str,)):

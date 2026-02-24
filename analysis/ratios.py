@@ -4,13 +4,17 @@ from typing import Optional
 from models import DonneesFinancieres
 
 
+class ZeroRevenueError(ValueError):
+    """Raised when chiffre d'affaires is zero, making ratio analysis impossible."""
+
+
 @dataclass
 class Ratios:
     # Rentabilité
     taux_marge_brute: float
     taux_ebe: float
     taux_resultat_net: float
-    rentabilite_capitaux: float
+    rentabilite_capitaux: Optional[float]  # None when capitaux_propres == 0
 
     # Liquidité & solvabilité
     ratio_liquidite_generale: float
@@ -28,13 +32,18 @@ class Ratios:
 
 
 def compute_ratios(d: DonneesFinancieres) -> Ratios:
-    ca           = d.chiffre_affaires.montant_n or 1
+    ca = d.chiffre_affaires.montant_n
+    if not ca:
+        raise ZeroRevenueError(
+            "Chiffre d'affaires nul ou manquant : l'analyse des ratios est impossible."
+        )
+
     achats       = d.achats_consommes.montant_n
     charges_ext  = d.charges_externes.montant_n
     charges_pers = d.charges_personnel.montant_n
     ebe          = d.ebe.montant_n
     rn           = d.resultat_net.montant_n
-    cp           = d.capitaux_propres.montant_n or 1
+    cp           = d.capitaux_propres.montant_n
     dettes_fin   = d.dettes_financieres.montant_n
     dettes_fourn = d.dettes_fournisseurs.montant_n
     clients      = d.creances_clients.montant_n
@@ -49,7 +58,7 @@ def compute_ratios(d: DonneesFinancieres) -> Ratios:
         taux_marge_brute         = round((ca - achats) / ca * 100, 1),
         taux_ebe                 = round(ebe / ca * 100, 1),
         taux_resultat_net        = round(rn / ca * 100, 1),
-        rentabilite_capitaux     = round(rn / cp * 100, 1),
+        rentabilite_capitaux     = round(rn / cp * 100, 1) if cp else None,
         ratio_liquidite_generale = round(actif_circulant / dettes_ct, 2),
         couverture_dettes        = round(dettes_fin / ebe, 1) if ebe > 0 else 99.0,
         autonomie_financiere     = round(cp / total_passif * 100, 1),

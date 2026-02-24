@@ -1,9 +1,11 @@
 # benchmark/sources/bdf.py
 import json
+import logging
 import httpx
 from pathlib import Path
-from functools import lru_cache
 from benchmark.base import BenchmarkSource, RatiosBruts
+
+logger = logging.getLogger(__name__)
 
 
 class BanqueDeFranceSource(BenchmarkSource):
@@ -24,7 +26,8 @@ class BanqueDeFranceSource(BenchmarkSource):
             if data:
                 self._save_cache(data, naf, annee, tranche_ca)
             return data
-        except Exception:
+        except Exception as exc:
+            logger.warning("BdF API call failed for NAF %s: %s", naf, exc)
             return None
 
     def _call_api(self, naf: str, annee: int, tranche_ca: str) -> RatiosBruts | None:

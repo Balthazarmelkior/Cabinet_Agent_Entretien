@@ -1,10 +1,13 @@
 # nodes/generate_interview_plan.py
 import json
+import logging
 import os
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 from models import FicheEntretien, PointEntretien
+
+logger = logging.getLogger(__name__)
 
 PROMPT = """Tu es associé senior d'un cabinet d'expertise comptable.
 Rédige la fiche de préparation d'entretien bilan.
@@ -81,16 +84,23 @@ def generate_interview_plan(state: dict) -> dict:
         if content.startswith("json"):
             content = content[4:]
 
-    raw = JsonOutputParser().parse(content)
-
-    fiche = FicheEntretien(
-        client_exercice      = f"Exercice {donnees.exercice_n}",
-        synthese_executive   = raw["synthese_executive"],
-        points_vigilance     = raw.get("points_vigilance", []),
-        plan_entretien       = [PointEntretien(**p) for p in raw.get("plan_entretien", [])],
-        missions_a_proposer  = raw.get("missions_a_proposer", []),
-        elements_a_recueillir= raw.get("elements_a_recueillir", []),
-        conclusion_conseillee= raw.get("conclusion_conseillee", ""),
-    )
+    try:
+        raw = JsonOutputParser().parse(content)
+        fiche = FicheEntretien(
+            client_exercice      = f"Exercice {donnees.exercice_n}",
+            synthese_executive   = raw["synthese_executive"],
+            points_vigilance     = raw.get("points_vigilance", []),
+            plan_entretien       = [PointEntretien(**p) for p in raw.get("plan_entretien", [])],
+            missions_a_proposer  = raw.get("missions_a_proposer", []),
+            elements_a_recueillir= raw.get("elements_a_recueillir", []),
+            conclusion_conseillee= raw.get("conclusion_conseillee", ""),
+        )
+    except Exception as exc:
+        logger.warning("Interview plan parsing failed, returning fallback fiche: %s", exc)
+        fiche = FicheEntretien(
+            client_exercice      = f"Exercice {donnees.exercice_n}",
+            synthese_executive   = "La génération automatique a échoué. Veuillez relancer l'analyse.",
+            conclusion_conseillee= "",
+        )
 
     return {"fiche_entretien": fiche}

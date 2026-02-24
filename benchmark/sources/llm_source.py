@@ -1,6 +1,9 @@
 # benchmark/sources/llm_source.py
 import json
+import logging
 from langchain_openai import ChatOpenAI
+
+logger = logging.getLogger(__name__)
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 from benchmark.base import BenchmarkSource, RatiosBruts
@@ -57,5 +60,6 @@ class LLMSource(BenchmarkSource):
                 fiabilite=3,
                 **{k: ratios.get(k) for k in RATIO_KEYS},
             )
-        except Exception:
+        except Exception as exc:
+            logger.warning("LLM benchmark source failed for NAF %s: %s", code_naf, exc)
             return None

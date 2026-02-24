@@ -9,8 +9,10 @@ from benchmark.sources.llm_source import LLMSource
 
 def benchmark_sectoriel(state: dict) -> dict:
     donnees = state["donnees_financieres"]
-    ratios  = state["ratios"]
     llm = ChatOpenAI(model=os.getenv("LLM_MODEL", "gpt-4o"), temperature=0)
+
+    from analysis.ratios import compute_ratios
+    ratios = compute_ratios(donnees)
 
     orchestrator = BenchmarkOrchestrator(
         bdf   = BanqueDeFranceSource(cache_dir=os.getenv("BDF_CACHE_DIR", "data/bdf_cache")),

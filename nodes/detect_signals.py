@@ -1,7 +1,10 @@
 # nodes/detect_signals.py
 import json
+import logging
 import os
 from langchain_openai import ChatOpenAI
+
+logger = logging.getLogger(__name__)
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 from analysis.ratios import compute_ratios
@@ -52,8 +55,9 @@ def detect_signals(state: dict) -> dict:
                     description=item["description"],
                     levier=item["levier"],
                 ))
-    except Exception:
-        pass  # les règles suffisent si le LLM échoue
+    except Exception as exc:
+        logger.warning("LLM signal enrichment failed: %s", exc)
+        # les règles suffisent si le LLM échoue
 
     signaux.sort(key=lambda s: s.gravite, reverse=True)
     return {"ratios": ratios, "signaux_detectes": signaux}

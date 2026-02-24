@@ -17,8 +17,14 @@ Retourne UNIQUEMENT un JSON array :
 Ne retourne pas les missions avec score < 0.5. Aucun texte hors JSON."""
 
 
+_CATALOGUE_BASE = Path(__file__).resolve().parent.parent / "data"
+
+
 def _load_catalogue(path: str) -> list[Mission]:
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    resolved = (Path(path) if Path(path).is_absolute() else (_CATALOGUE_BASE.parent / path)).resolve()
+    if not resolved.is_relative_to(_CATALOGUE_BASE):
+        raise ValueError(f"Catalogue path '{path}' is outside the allowed data directory.")
+    data = json.loads(resolved.read_text(encoding="utf-8"))
     return [Mission(**m) for m in data]
 
 
