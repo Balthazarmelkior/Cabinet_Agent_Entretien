@@ -1,0 +1,92 @@
+[
+  {
+    "id": "MISSION_TRESORERIE",
+    "titre": "Tableau de bord trésorerie",
+    "description": "Mise en place d'un suivi mensuel de trésorerie prévisionnel avec alertes automatiques.",
+    "benefice_client": "Anticiper les tensions de trésorerie et éviter les découverts coûteux",
+    "codes_signaux": ["LIQUIDITE_CRITIQUE", "DELAI_CLIENTS_ELEVE", "DESEQUILIBRE_BFR"],
+    "honoraires_indicatifs": "800-1 500 €/an",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_PREVISIONNEL",
+    "titre": "Budget prévisionnel annuel",
+    "description": "Élaboration d'un budget annuel avec suivi trimestriel des écarts réel/prévu.",
+    "benefice_client": "Piloter l'entreprise avec des objectifs chiffrés et anticiper les besoins de financement",
+    "codes_signaux": ["FORTE_CROISSANCE", "BAISSE_CA_SIGNIFICATIVE", "EBE_FAIBLE"],
+    "honoraires_indicatifs": "1 500-3 000 €/an",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_HOLDING",
+    "titre": "Création de holding",
+    "description": "Structuration patrimoniale via une société holding pour optimiser la fiscalité des dividendes.",
+    "benefice_client": "Réduire l'imposition sur les dividendes et préparer la transmission patrimoniale",
+    "codes_signaux": ["OPTIMISATION_FISCALE", "FORTE_RENTABILITE", "CAPACITE_INVESTISSEMENT"],
+    "honoraires_indicatifs": "3 000-6 000 €",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AFFACTURAGE",
+    "titre": "Mise en place affacturage",
+    "description": "Accompagnement dans la sélection et la mise en place d'une solution d'affacturage.",
+    "benefice_client": "Encaisser vos créances clients immédiatement et financer votre croissance sans délai",
+    "codes_signaux": ["DELAI_CLIENTS_ELEVE", "LIQUIDITE_CRITIQUE", "FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "500-1 200 €",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AGO",
+    "titre": "Secrétariat juridique annuel",
+    "description": "Convocation, tenue et procès-verbal d'Assemblée Générale Ordinaire annuelle.",
+    "benefice_client": "Respecter vos obligations légales sans y consacrer de temps",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "400-800 €/an",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_TABLEAU_BORD",
+    "titre": "Tableau de bord de gestion mensuel",
+    "description": "Reportings mensuels avec indicateurs clés : CA, marge, charges, comparaison N-1.",
+    "benefice_client": "Prendre les bonnes décisions chaque mois avec des chiffres à jour",
+    "codes_signaux": ["EBE_FAIBLE", "BAISSE_CA_SIGNIFICATIVE", "FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "1 200-2 400 €/an",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AUDIT_RH",
+    "titre": "Audit et optimisation sociale",
+    "description": "Audit des charges sociales, optimisation de la rémunération dirigeant, épargne salariale.",
+    "benefice_client": "Réduire vos charges sociales et fidéliser vos salariés avec des dispositifs adaptés",
+    "codes_signaux": ["OPTIMISATION_FISCALE", "FORTE_RENTABILITE"],
+    "honoraires_indicatifs": "1 000-2 500 €",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_RESTRUCTURATION_DETTE",
+    "titre": "Accompagnement restructuration financière",
+    "description": "Négociation bancaire, renégociation de la dette, aide à la mise en place de garanties.",
+    "benefice_client": "Alléger vos charges financières et retrouver des marges de manœuvre",
+    "codes_signaux": ["ENDETTEMENT_EXCESSIF", "EBE_NEGATIF", "LIQUIDITE_CRITIQUE"],
+    "honoraires_indicatifs": "2 000-5 000 €",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PER",
+    "titre": "Plan d'épargne retraite (PER)",
+    "description": "Mise en place d'un PER individuel ou collectif pour le dirigeant et/ou les salariés.",
+    "benefice_client": "Préparer votre retraite en réduisant votre impôt sur le revenu dès cette année",
+    "codes_signaux": ["OPTIMISATION_FISCALE", "FORTE_RENTABILITE"],
+    "honoraires_indicatifs": "300-600 €",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_CESSION",
+    "titre": "Accompagnement transmission / cession",
+    "description": "Diagnostic de valeur, structuration de la cession, accompagnement des négociations.",
+    "benefice_client": "Céder votre entreprise au meilleur prix dans les meilleures conditions fiscales",
+    "codes_signaux": ["FORTE_RENTABILITE", "CAPACITE_INVESTISSEMENT"],
+    "honoraires_indicatifs": "5 000-15 000 €",
+    "priorite_proposition": 3
+  }
+]
