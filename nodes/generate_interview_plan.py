@@ -42,6 +42,9 @@ def generate_interview_plan(state: dict) -> dict:
     benchmark = state.get("benchmark")
     llm = ChatOpenAI(model=os.getenv("LLM_MODEL", "gpt-4o"), temperature=0.2)
 
+    def _n1(poste):
+        return poste.montant_n1
+
     context = {
         "client": {
             "exercice": donnees.exercice_n,
@@ -49,8 +52,20 @@ def generate_interview_plan(state: dict) -> dict:
             "forme_juridique": donnees.forme_juridique,
             "effectif": donnees.effectif,
             "ca": donnees.chiffre_affaires.montant_n,
+            "ca_n1": _n1(donnees.chiffre_affaires),
+            "variation_ca_pct": donnees.chiffre_affaires.variation_pct,
             "resultat_net": donnees.resultat_net.montant_n,
+            "resultat_net_n1": _n1(donnees.resultat_net),
+            "variation_resultat_pct": donnees.resultat_net.variation_pct,
+            "ebe": donnees.ebe.montant_n,
+            "ebe_n1": _n1(donnees.ebe),
+            "variation_ebe_pct": donnees.ebe.variation_pct,
             "tresorerie": donnees.tresorerie_actif.montant_n,
+            "tresorerie_n1": _n1(donnees.tresorerie_actif),
+            "charges_personnel": donnees.charges_personnel.montant_n,
+            "charges_personnel_n1": _n1(donnees.charges_personnel),
+            "dettes_financieres": donnees.dettes_financieres.montant_n,
+            "dettes_financieres_n1": _n1(donnees.dettes_financieres),
         },
         "ratios_cles": {
             "taux_ebe": ratios.taux_ebe,

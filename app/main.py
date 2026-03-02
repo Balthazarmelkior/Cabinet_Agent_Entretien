@@ -113,15 +113,26 @@ def render_form():
     col_left, col_right = st.columns([1, 1], gap="large")
 
     with col_left:
-        st.markdown('<div class="section-card"><div class="section-title">📁 Fichier client</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-card"><div class="section-title">📁 Fichiers client</div>', unsafe_allow_html=True)
         fichier = st.file_uploader(
-            "FEC (.txt/.csv) ou bilan PDF",
+            "FEC exercice N (.txt/.csv) ou bilan PDF *",
             type=["pdf", "txt", "csv"],
-            label_visibility="collapsed",
+            label_visibility="visible",
+            key="fec_n",
         )
         if fichier:
             ext = Path(fichier.name).suffix.upper()
-            st.success(f"✅ {fichier.name} — {ext} — {fichier.size // 1024} Ko")
+            st.success(f"✅ N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
+
+        fichier_n1 = st.file_uploader(
+            "FEC exercice N-1 (.txt/.csv) — optionnel",
+            type=["txt", "csv"],
+            label_visibility="visible",
+            key="fec_n1",
+        )
+        if fichier_n1:
+            ext_n1 = Path(fichier_n1.name).suffix.upper()
+            st.success(f"✅ N-1 : {fichier_n1.name} — {ext_n1} — {fichier_n1.size // 1024} Ko")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
@@ -147,19 +158,26 @@ def render_form():
         )
 
     if lancer:
-        run_analysis(fichier, nom_client, code_naf, catalogue)
+        run_analysis(fichier, nom_client, code_naf, catalogue, fichier_n1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ANALYSE
 # ─────────────────────────────────────────────────────────────────────────────
-def run_analysis(fichier, nom_client, code_naf, catalogue_path):
+def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None):
     from graph import build_graph
 
-    tmp_path = None
+    tmp_path    = None
+    tmp_path_n1 = None
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=Path(fichier.name).suffix) as tmp:
         tmp.write(fichier.read())
         tmp_path = tmp.name
+
+    if fichier_n1:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(fichier_n1.name).suffix) as tmp_n1:
+            tmp_n1.write(fichier_n1.read())
+            tmp_path_n1 = tmp_n1.name
 
     etapes = [
         (0.15, "📄 Extraction des données financières..."),
@@ -179,9 +197,10 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path):
         step_idx    = 0
 
         for event in graph.stream({
-            "fichier_path":   tmp_path,
-            "catalogue_path": catalogue_path,
-            "code_naf":       code_naf.upper().strip(),
+            "fichier_path":    tmp_path,
+            "fichier_path_n1": tmp_path_n1,
+            "catalogue_path":  catalogue_path,
+            "code_naf":        code_naf.upper().strip(),
         }):
             if step_idx < len(etapes):
                 pct, label = etapes[step_idx]
@@ -209,6 +228,8 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path):
     finally:
         if tmp_path:
             Path(tmp_path).unlink(missing_ok=True)
+        if tmp_path_n1:
+            Path(tmp_path_n1).unlink(missing_ok=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -264,11 +285,14 @@ def render_dashboard():
              dpct(donnees.chiffre_affaires.variation_pct),
              (donnees.chiffre_affaires.variation_pct or 0) >= 0)
     kpi_html(c2, "EBE", fmt(donnees.ebe.montant_n),
-             f"{ratios.taux_ebe:.1f}% du CA", ratios.taux_ebe >= 5)
+             dpct(donnees.ebe.variation_pct) if donnees.ebe.variation_pct is not None else f"{ratios.taux_ebe:.1f}% du CA",
+             (donnees.ebe.variation_pct or ratios.taux_ebe - 5) >= 0)
     kpi_html(c3, "Résultat net", fmt(donnees.resultat_net.montant_n),
              dpct(donnees.resultat_net.variation_pct),
              (donnees.resultat_net.variation_pct or 0) >= 0)
-    kpi_html(c4, "Trésorerie", fmt(donnees.tresorerie_actif.montant_n))
+    kpi_html(c4, "Trésorerie", fmt(donnees.tresorerie_actif.montant_n),
+             dpct(donnees.tresorerie_actif.variation_pct),
+             (donnees.tresorerie_actif.variation_pct or 0) >= 0)
     kpi_html(c5, "Signaux",
              str(len(signaux)),
              f"{sum(1 for s in signaux if s.gravite == 3)} critique(s)",
@@ -277,12 +301,23 @@ def render_dashboard():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
-    t_bench, t_sig, t_mis, t_fiche = st.tabs([
+    has_n1 = donnees.chiffre_affaires.montant_n1 is not None
+    tab_labels = [
         "📊 Benchmark sectoriel",
         f"🔍 Signaux ({len(signaux)})",
         f"🎯 Missions ({len(missions)})",
         "📋 Fiche entretien",
-    ])
+    ]
+    if has_n1:
+        tab_labels.insert(1, "📈 Évolution N/N-1")
+
+    all_tabs = st.tabs(tab_labels)
+
+    if has_n1:
+        t_bench, t_evol, t_sig, t_mis, t_fiche = all_tabs
+    else:
+        t_bench, t_sig, t_mis, t_fiche = all_tabs
+        t_evol = None
 
     # ── Benchmark ─────────────────────────────────────────────────────────────
     with t_bench:
@@ -323,6 +358,63 @@ def render_dashboard():
                     </div>""", unsafe_allow_html=True)
 
             st.info(f"💬 {benchmark.commentaire_global}")
+
+    # ── Évolution N/N-1 ───────────────────────────────────────────────────────
+    if t_evol is not None:
+        with t_evol:
+            exercice_n1 = donnees.exercice_n - 1
+            st.markdown(
+                f'<div class="section-title">Comparatif exercice {donnees.exercice_n} vs {exercice_n1}</div>',
+                unsafe_allow_html=True,
+            )
+            postes = [
+                donnees.chiffre_affaires,
+                donnees.achats_consommes,
+                donnees.charges_externes,
+                donnees.charges_personnel,
+                donnees.ebe,
+                donnees.resultat_exploitation,
+                donnees.resultat_net,
+                donnees.immobilisations_nettes,
+                donnees.stocks,
+                donnees.creances_clients,
+                donnees.tresorerie_actif,
+                donnees.capitaux_propres,
+                donnees.dettes_financieres,
+                donnees.dettes_fournisseurs,
+            ]
+            rows_html = ""
+            for p in postes:
+                n_fmt  = fmt(p.montant_n)
+                n1_fmt = fmt(p.montant_n1) if p.montant_n1 is not None else "—"
+                var    = p.variation_pct
+                if var is None:
+                    var_html = '<span style="color:#94A3B8;">—</span>'
+                elif var >= 0:
+                    var_html = f'<span style="color:#16A34A;font-weight:600;">▲ {var:+.1f}%</span>'
+                else:
+                    var_html = f'<span style="color:#DC2626;font-weight:600;">▼ {var:.1f}%</span>'
+                rows_html += f"""
+                <tr style="border-bottom:1px solid #F1F5F9;">
+                    <td style="padding:.4rem .6rem;color:#475569;font-size:.83rem;">{p.libelle}</td>
+                    <td style="padding:.4rem .6rem;text-align:right;font-weight:600;font-size:.83rem;">{n_fmt}</td>
+                    <td style="padding:.4rem .6rem;text-align:right;color:#64748B;font-size:.83rem;">{n1_fmt}</td>
+                    <td style="padding:.4rem .6rem;text-align:right;font-size:.83rem;">{var_html}</td>
+                </tr>"""
+
+            st.markdown(f"""
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#F8FAFC;">
+                        <th style="padding:.5rem .6rem;text-align:left;font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:.05em;">Poste</th>
+                        <th style="padding:.5rem .6rem;text-align:right;font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:.05em;">N ({donnees.exercice_n})</th>
+                        <th style="padding:.5rem .6rem;text-align:right;font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:.05em;">N-1 ({exercice_n1})</th>
+                        <th style="padding:.5rem .6rem;text-align:right;font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:.05em;">Variation</th>
+                    </tr>
+                </thead>
+                <tbody>{rows_html}</tbody>
+            </table>
+            """, unsafe_allow_html=True)
 
     # ── Signaux ───────────────────────────────────────────────────────────────
     with t_sig:
