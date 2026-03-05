@@ -99,12 +99,19 @@ def _poste(libelle: str, n: float, n1: float | None = None) -> PosteComptable:
     )
 
 
-def parse_fec(fec_path: str, fec_path_n1: str | None = None) -> DonneesFinancieres:
-    sums = _extract_sums(_load_df(fec_path))
+def parse_fec(fec_path: str, fec_path_n1: str | None = None, anonymize: bool = False) -> DonneesFinancieres:
+    df = _load_df(fec_path)
+    if anonymize:
+        from parsers.anonymizer import anonymize_fec_df
+        df = anonymize_fec_df(df)
+    sums = _extract_sums(df)
 
     sums_n1 = None
     if fec_path_n1:
-        sums_n1 = _extract_sums(_load_df(fec_path_n1))
+        df_n1 = _load_df(fec_path_n1)
+        if anonymize:
+            df_n1 = anonymize_fec_df(df_n1)
+        sums_n1 = _extract_sums(df_n1)
 
     def n1(key):
         return sums_n1[key] if sums_n1 else None

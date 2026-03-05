@@ -20,6 +20,7 @@ class BillanState(TypedDict, total=False):
     fichier_path_n1: Optional[str]
     catalogue_path: str
     code_naf: str
+    anonymize: bool
 
     # ── Intermédiaires ────────────────────────────────────────────────────────
     donnees_financieres: Optional[DonneesFinancieres]
@@ -66,6 +67,7 @@ def prepare_entretien_bilan(
     catalogue_path: str,
     code_naf: str,
     fichier_path_n1: Optional[str] = None,
+    anonymize: bool = False,
 ) -> BillanState:
     """Point d'entrée principal."""
     graph = build_graph()
@@ -74,4 +76,5 @@ def prepare_entretien_bilan(
         "fichier_path_n1": fichier_path_n1,
         "catalogue_path":  catalogue_path,
         "code_naf":        code_naf.upper().strip(),
+        "anonymize":       anonymize,
     })
