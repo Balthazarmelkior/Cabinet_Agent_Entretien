@@ -145,6 +145,11 @@ def render_form():
             st.markdown("<br>", unsafe_allow_html=True)
             st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
         catalogue = st.text_input("Catalogue missions", value="data/catalogue_missions.json")
+        anonymiser = st.checkbox(
+            "🔒 Anonymiser les données",
+            value=True,
+            help="Masque les noms de société, SIREN et libellés tiers avant envoi aux agents IA",
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -158,13 +163,13 @@ def render_form():
         )
 
     if lancer:
-        run_analysis(fichier, nom_client, code_naf, catalogue, fichier_n1)
+        run_analysis(fichier, nom_client, code_naf, catalogue, fichier_n1, anonymiser)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ANALYSE
 # ─────────────────────────────────────────────────────────────────────────────
-def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None):
+def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None, anonymize=False):
     from graph import build_graph
 
     tmp_path    = None
@@ -201,6 +206,7 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None)
             "fichier_path_n1": tmp_path_n1,
             "catalogue_path":  catalogue_path,
             "code_naf":        code_naf.upper().strip(),
+            "anonymize":       anonymize,
         }):
             if step_idx < len(etapes):
                 pct, label = etapes[step_idx]

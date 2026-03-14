@@ -7,6 +7,7 @@ Agent LangGraph qui analyse un bilan client (FEC ou PDF), benchmark les ratios p
 ## Fonctionnalités
 
 - **Parsing automatique** FEC (CSV tabulé, norme DGFiP) et bilan PDF
+- **Anonymisation intégrée** des données avant envoi aux agents IA (option activée par défaut)
 - **Calcul de ratios** : rentabilité, liquidité, solvabilité, activité
 - **Benchmarking sectoriel** : Banque de France → INSEE → LLM (fallback automatique)
 - **Détection de signaux** : règles déterministes + enrichissement LLM
@@ -28,7 +29,8 @@ cabinet_agent/
 │       └── download.py          # Export Word en mémoire
 ├── parsers/
 │   ├── fec_parser.py            # Parser FEC déterministe (pandas)
-│   └── pdf_parser.py            # Parser PDF via LLM + pdfplumber
+│   ├── pdf_parser.py            # Parser PDF via LLM + pdfplumber
+│   └── anonymizer.py            # Anonymisation FEC et texte PDF
 ├── analysis/
 │   ├── ratios.py                # Calcul des ratios financiers
 │   ├── rules.py                 # Règles de détection des signaux
@@ -108,9 +110,10 @@ Ouvrir http://localhost:8501
 1. **Déposer le fichier** FEC (`.txt` ou `.csv`) ou bilan PDF
 2. **Saisir le code NAF** à 5 caractères (ex: `4711F`) — visible sur le Kbis
 3. **Renseigner le nom du client**
-4. Cliquer **Lancer l'analyse**
-5. Explorer les 4 onglets : Benchmark · Signaux · Missions · Fiche entretien
-6. **Télécharger** la fiche Word
+4. Cocher **🔒 Anonymiser les données** (activé par défaut) pour masquer les identifiants avant l'envoi aux agents IA
+5. Cliquer **Lancer l'analyse**
+6. Explorer les 4 onglets : Benchmark · Signaux · Missions · Fiche entretien
+7. **Télécharger** la fiche Word
 
 ---
 
@@ -159,6 +162,47 @@ Structure JSON attendue :
 | Graphiques | Plotly |
 | Export Word | python-docx |
 | Validation modèles | Pydantic v2 |
+
+---
+
+## Anonymisation des données
+
+L'option **🔒 Anonymiser les données** (activée par défaut dans l'UI) masque les informations identifiantes avant tout envoi aux agents IA.
+
+### FEC
+
+| Colonne | Traitement |
+|---------|-----------|
+| `EcritureLib` | Remplacé par `****` (longueur préservée) |
+| `CompteNum` | Tronqué à `xxx000` pour les comptes tiers (401x, 411x, 421x, 455x) |
+| `CompAuxNum` | Synchronisé avec `CompteNum` modifié |
+| `CompteLib` | Remplacé par `***` pour les comptes tiers |
+| `CompAuxLib` | Remplacé par `***` pour les comptes tiers |
+
+Les agrégations numériques (EBE, ratios, etc.) restent inchangées car ces colonnes ne sont pas utilisées dans les calculs.
+
+### PDF
+
+Le texte extrait est nettoyé avant envoi à GPT-4o :
+
+| Pattern | Remplacement |
+|---------|-------------|
+| SIREN / SIRET (9 ou 14 chiffres) | `[SIREN]` |
+| Formes juridiques + nom (SARL, SAS, EURL…) | `[SOCIÉTÉ]` |
+| Adresses postales | `[ADRESSE]` |
+
+### Activation programmatique
+
+```python
+from graph import prepare_entretien_bilan
+
+result = prepare_entretien_bilan(
+    fichier_path="client.txt",
+    catalogue_path="data/catalogue_missions.json",
+    code_naf="4711F",
+    anonymize=True,   # <-- activer l'anonymisation
+)
+```
 
 ---
 

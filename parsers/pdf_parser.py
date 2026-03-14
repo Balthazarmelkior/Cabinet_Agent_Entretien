@@ -58,8 +58,12 @@ def _extract_text(pdf_path: str, max_chars: int = 14_000) -> str:
     return full[:max_chars] + ("\n[... tronqué ...]" if len(full) > max_chars else "")
 
 
-def parse_pdf(pdf_path: str, llm: ChatOpenAI) -> DonneesFinancieres:
+def parse_pdf(pdf_path: str, llm: ChatOpenAI, anonymize: bool = False) -> DonneesFinancieres:
     raw_text = _extract_text(pdf_path)
+
+    if anonymize:
+        from parsers.anonymizer import anonymize_pdf_text
+        raw_text = anonymize_pdf_text(raw_text)
 
     response = llm.invoke([
         SystemMessage(content=SYSTEM_PROMPT),

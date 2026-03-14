@@ -10,13 +10,14 @@ def extract_financial_data(state: dict) -> dict:
     llm = ChatOpenAI(model=os.getenv("LLM_MODEL", "gpt-4o"), temperature=0)
 
     suffix = file_path.suffix.lower()
+    anonymize = state.get("anonymize", False)
 
     if suffix in [".txt", ".csv", ""]:
         from parsers.fec_parser import parse_fec
-        donnees = parse_fec(str(file_path), str(file_path_n1) if file_path_n1 else None)
+        donnees = parse_fec(str(file_path), str(file_path_n1) if file_path_n1 else None, anonymize=anonymize)
     elif suffix == ".pdf":
         from parsers.pdf_parser import parse_pdf
-        donnees = parse_pdf(str(file_path), llm)
+        donnees = parse_pdf(str(file_path), llm, anonymize=anonymize)
     else:
         raise ValueError(f"Format non supporté : {suffix}. Attendu : .txt, .csv, .pdf")
 
