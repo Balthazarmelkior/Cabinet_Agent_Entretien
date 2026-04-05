@@ -95,19 +95,25 @@ div[data-testid="stMetric"]{background:white;border-radius:12px;padding:.8rem;bo
 [data-testid="stTab"] button{font-size:.88rem !important;}
 .stDownloadButton>button{background:#0F2044 !important;color:white !important;border-radius:8px !important;font-weight:600 !important;}
 
-/* File uploader */
-[data-testid="stFileUploader"] {width:100% !important;}
-[data-testid="stFileUploader"] section {padding:.8rem !important;}
-[data-testid="stFileUploader"] button {
+/* File uploader — fix duplicated button text */
+[data-testid="stFileUploader"] button,
+[data-testid="stFileUploaderDropzone"] button,
+[data-testid="baseButton-secondary"] {
     font-size:0 !important;
-    padding:.45rem 1rem !important;
+    line-height:0 !important;
+    padding:.5rem 1.2rem !important;
     border-radius:6px !important;
+    overflow:hidden !important;
 }
-[data-testid="stFileUploader"] button::after {
+[data-testid="stFileUploader"] button::after,
+[data-testid="stFileUploaderDropzone"] button::after,
+[data-testid="stFileUploaderDropzone"] [data-testid="baseButton-secondary"]::after {
     content:"Parcourir";
-    font-size:.82rem !important;
+    font-size:.84rem !important;
+    line-height:normal !important;
     font-weight:500;
 }
+[data-testid="stFileUploaderDropzone"] small {font-size:.75rem !important;}
 </style>
 """, unsafe_allow_html=True)
 
