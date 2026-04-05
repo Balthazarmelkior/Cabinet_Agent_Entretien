@@ -185,12 +185,14 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None,
             tmp_path_n1 = tmp_n1.name
 
     etapes = [
-        (0.15, "📄 Extraction des données financières..."),
-        (0.35, "📐 Calcul des ratios..."),
-        (0.55, "🔍 Détection des signaux..."),
-        (0.72, "📊 Benchmarking sectoriel..."),
-        (0.87, "🎯 Matching des missions..."),
-        (0.95, "📝 Génération de la fiche d'entretien..."),
+        (0.12, "📄 Extraction des données financières..."),
+        (0.28, "📐 Calcul des ratios..."),
+        (0.42, "🔍 Détection des signaux..."),
+        (0.55, "📊 Benchmarking sectoriel..."),
+        (0.62, "🌐 Analyse sectorielle Perplexity..."),
+        (0.75, "🎯 Matching des missions..."),
+        (0.85, "📝 Génération de la fiche d'entretien..."),
+        (0.95, "🎬 Génération des slides Gamma..."),
     ]
 
     bar    = st.progress(0.0)
@@ -310,19 +312,21 @@ def render_dashboard():
     has_n1 = donnees.chiffre_affaires.montant_n1 is not None
     tab_labels = [
         "📊 Benchmark sectoriel",
+        "🌐 Analyse sectorielle",
         f"🔍 Signaux ({len(signaux)})",
         f"🎯 Missions ({len(missions)})",
         "📋 Fiche entretien",
+        "🎬 Slides Gamma",
     ]
     if has_n1:
-        tab_labels.insert(1, "📈 Évolution N/N-1")
+        tab_labels.insert(2, "📈 Évolution N/N-1")
 
     all_tabs = st.tabs(tab_labels)
 
     if has_n1:
-        t_bench, t_evol, t_sig, t_mis, t_fiche = all_tabs
+        t_bench, t_secteur, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
     else:
-        t_bench, t_sig, t_mis, t_fiche = all_tabs
+        t_bench, t_secteur, t_sig, t_mis, t_fiche, t_slides = all_tabs
         t_evol = None
 
     # ── Benchmark ─────────────────────────────────────────────────────────────
@@ -497,6 +501,71 @@ def render_dashboard():
                 st.markdown("**Comment conclure**")
                 st.info(fiche.conclusion_conseillee)
                 st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── Analyse sectorielle ──────────────────────────────────────────────────────
+    with t_secteur:
+        note = analyse.get("note_sectorielle")
+        sources = analyse.get("sources_perplexity", [])
+        valides = analyse.get("sources_valides", False)
+
+        if not note or note == "Analyse sectorielle non disponible.":
+            st.info("Analyse sectorielle non disponible (clé PERPLEXITY_API_KEY non configurée ou erreur API).")
+        else:
+            if valides:
+                st.markdown("""
+                <div style="background:#D1FAE5;border-radius:8px;padding:.6rem 1rem;
+                    margin-bottom:1rem;font-size:.85rem;color:#065F46;">
+                    <b>✅ Sources validées</b> — Données issues de sources officielles (INSEE, Banque de France, CCI)
+                </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div style="background:#FEF3C7;border-radius:8px;padding:.6rem 1rem;
+                    margin-bottom:1rem;font-size:.85rem;color:#92400E;">
+                    <b>⚠️ Sources non vérifiées</b> — Les sources n'ont pas pu être validées sur des domaines officiels
+                </div>""", unsafe_allow_html=True)
+
+            st.markdown('<div class="section-card">', unsafe_allow_html=True)
+            st.markdown(note)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            if sources:
+                st.markdown('<div class="section-title" style="margin-top:1rem;">📎 Sources</div>',
+                            unsafe_allow_html=True)
+                for s in sources:
+                    url = s.get("url", "")
+                    titre = s.get("titre", url)
+                    if url:
+                        st.markdown(f"- [{html_lib.escape(titre or url)}]({url})")
+
+    # ── Slides Gamma ─────────────────────────────────────────────────────────
+    with t_slides:
+        slides_url = analyse.get("slides_url")
+        contenu = analyse.get("contenu_slides", "")
+
+        if not slides_url:
+            st.info("Présentation non disponible (clé GAMMA_API_KEY non configurée ou erreur API).")
+            if contenu:
+                st.markdown("**Aperçu du contenu généré :**")
+                with st.expander("Contenu Markdown", expanded=False):
+                    st.markdown(contenu)
+        else:
+            st.markdown(f"""
+            <div style="background:#EEF2FF;border-radius:10px;padding:.75rem 1.2rem;
+                margin-bottom:1rem;font-size:.85rem;">
+                <b>🎬 Présentation générée</b> — 10 slides
+            </div>""", unsafe_allow_html=True)
+
+            st.link_button("🔗 Ouvrir la présentation Gamma", slides_url, use_container_width=True)
+
+            st.markdown(f"""
+            <iframe src="{slides_url}/embed" width="100%" height="500"
+                    frameborder="0" style="border-radius:12px;margin-top:1rem;"
+                    allowfullscreen></iframe>
+            """, unsafe_allow_html=True)
+
+            if contenu:
+                with st.expander("📄 Contenu source (Markdown)"):
+                    st.code(contenu, language="markdown")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
