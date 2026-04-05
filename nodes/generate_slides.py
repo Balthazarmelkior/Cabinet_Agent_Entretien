@@ -59,29 +59,56 @@ def _build_slide_content(state: dict) -> str:
     return "\n".join(lines)
 
 
+GAMMA_BASE_URL = "https://public-api.gamma.app/v1.0"
+POLL_INTERVAL = 5  # seconds
+MAX_POLLS = 40  # 40 * 5s = 200s max
+
+
 async def _generate_gamma(contenu: str) -> dict:
     api_key = os.getenv("GAMMA_API_KEY", "")
     if not api_key:
         return {"url": None, "slides_count": 0}
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json",
+    }
+
+    import asyncio as _asyncio
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # 1. Launch generation
         response = await client.post(
-            "https://api.gamma.app/presentations/generate",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
+            f"{GAMMA_BASE_URL}/generations",
+            headers=headers,
             json={
-                "content": contenu,
-                "theme": "cabinet",
-                "slides_count": 10,
-                "format": "markdown",
+                "inputText": contenu,
+                "textMode": "condense",
+                "format": "presentation",
+                "numCards": 10,
             },
         )
         response.raise_for_status()
         data = response.json()
 
-    return {"url": data.get("url", ""), "slides_count": data.get("count", 10)}
+        generation_id = data["generationId"]
+
+        # 2. Poll until complete
+        gamma_url = None
+        for _ in range(MAX_POLLS):
+            await _asyncio.sleep(POLL_INTERVAL)
+            poll = await client.get(
+                f"{GAMMA_BASE_URL}/generations/{generation_id}",
+                headers=headers,
+            )
+            poll.raise_for_status()
+            poll_data = poll.json()
+            status = poll_data.get("status", "")
+            gamma_url = poll_data.get("gammaUrl") or gamma_url
+            if status in ("complete", "completed"):
+                break
+
+    return {"url": gamma_url, "slides_count": 10}
 
 
 def generate_slides(state: dict) -> dict:
