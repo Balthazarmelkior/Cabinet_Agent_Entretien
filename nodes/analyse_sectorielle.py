@@ -28,6 +28,9 @@ def analyse_sectorielle(state: dict) -> dict:
                     "note_sectorielle": result.note,
                     "sources_perplexity": result.sources,
                     "sources_valides": result.sources_valides,
+                    "swot": result.swot,
+                    "analyse_micro": result.analyse_micro,
+                    "questions_rdv": result.questions_rdv,
                 }
         except Exception:
             logger.exception("Agent CARLA failed for NAF %s", code_naf)

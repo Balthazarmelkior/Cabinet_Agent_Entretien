@@ -103,6 +103,9 @@ def generate_interview_plan(state: dict) -> dict:
             "tresorerie_nette_n1": ratios.tresorerie_nette_n1,
         },
         "analyse_sectorielle": note_sectorielle[:3000] if note_sectorielle else None,
+        "swot_sectoriel": state.get("swot"),
+        "analyse_micro": state.get("analyse_micro", "")[:1500] if state.get("analyse_micro") else None,
+        "questions_strategiques_carla": state.get("questions_rdv", []),
         "benchmark_commentaire": benchmark.commentaire_global if benchmark else None,
         "benchmark_ratios": [
             {"libelle": r.libelle, "valeur_client": r.valeur_client,

@@ -559,8 +559,49 @@ def render_dashboard():
             st.markdown(note)
             st.markdown('</div>', unsafe_allow_html=True)
 
+            # SWOT sectoriel
+            swot = analyse.get("swot", {})
+            if swot and any(swot.get(k) for k in ("forces", "faiblesses", "opportunites", "menaces")):
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">📊 Analyse SWOT sectorielle</div>',
+                            unsafe_allow_html=True)
+                col_s1, col_s2 = st.columns(2, gap="medium")
+                with col_s1:
+                    with st.container(border=True):
+                        st.markdown("**💪 Forces**")
+                        for f in swot.get("forces", []):
+                            st.markdown(f"- {f}")
+                    with st.container(border=True):
+                        st.markdown("**🎯 Opportunités**")
+                        for o in swot.get("opportunites", []):
+                            st.markdown(f"- {o}")
+                with col_s2:
+                    with st.container(border=True):
+                        st.markdown("**⚠️ Faiblesses**")
+                        for f in swot.get("faiblesses", []):
+                            st.markdown(f"- {f}")
+                    with st.container(border=True):
+                        st.markdown("**🔴 Menaces**")
+                        for m in swot.get("menaces", []):
+                            st.markdown(f"- {m}")
+
+            # Analyse micro-économique
+            analyse_micro = analyse.get("analyse_micro", "")
+            if analyse_micro:
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">🔬 Analyse micro-économique</div>',
+                            unsafe_allow_html=True)
+                st.markdown(analyse_micro)
+
+            # Questions stratégiques RDV
+            questions = analyse.get("questions_rdv", [])
+            if questions:
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">❓ Questions stratégiques pour le RDV</div>',
+                            unsafe_allow_html=True)
+                for i, q in enumerate(questions, 1):
+                    st.markdown(f"**{i}.** {q}")
+
+            # Sources
             if sources:
-                st.markdown('<div class="section-title" style="margin-top:1rem;">📎 Sources</div>',
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">📎 Sources</div>',
                             unsafe_allow_html=True)
                 for s in sources:
                     url = s.get("url", "")

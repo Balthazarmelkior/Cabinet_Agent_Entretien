@@ -32,10 +32,15 @@ class BillanState(TypedDict, total=False):
     # ── Output ────────────────────────────────────────────────────────────────
     fiche_entretien: Optional[FicheEntretien]
 
-    # ── Perplexity + Gamma ───────────────────────────────────────────────
+    # ── CARLA (Perplexity + SWOT + analyse micro) ──────────────────────
     note_sectorielle: Optional[str]
     sources_perplexity: Optional[list[dict]]
     sources_valides: Optional[bool]
+    swot: Optional[dict]
+    analyse_micro: Optional[str]
+    questions_rdv: Optional[list[str]]
+
+    # ── Gamma ────────────────────────────────────────────────────────────
     contenu_slides: Optional[str]
     slides_url: Optional[str]
 

@@ -64,6 +64,19 @@ def _build_slide_content(state: dict) -> str:
             "",
         ]
 
+    # Slide 5b: SWOT sectoriel
+    swot = state.get("swot", {})
+    if swot and any(swot.get(k) for k in ("forces", "faiblesses", "opportunites", "menaces")):
+        lines += ["## Analyse SWOT Sectorielle", ""]
+        for label, key in [("Forces", "forces"), ("Faiblesses", "faiblesses"),
+                           ("Opportunités", "opportunites"), ("Menaces", "menaces")]:
+            items = swot.get(key, [])
+            if items:
+                lines.append(f"**{label} :**")
+                for item in items:
+                    lines.append(f"- {item}")
+                lines.append("")
+
     # Slide 6: Benchmark
     if benchmark:
         lines += [
