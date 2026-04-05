@@ -97,8 +97,17 @@ div[data-testid="stMetric"]{background:white;border-radius:12px;padding:.8rem;bo
 
 /* File uploader */
 [data-testid="stFileUploader"] {width:100% !important;}
-[data-testid="stFileUploader"] section {padding:.6rem !important;}
-[data-testid="stFileUploader"] button {font-size:.82rem !important;white-space:nowrap !important;}
+[data-testid="stFileUploader"] section {padding:.8rem !important;}
+[data-testid="stFileUploader"] button {
+    font-size:0 !important;
+    padding:.45rem 1rem !important;
+    border-radius:6px !important;
+}
+[data-testid="stFileUploader"] button::after {
+    content:"Parcourir";
+    font-size:.82rem !important;
+    font-weight:500;
+}
 </style>
 """, unsafe_allow_html=True)
 
