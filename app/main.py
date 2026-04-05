@@ -507,7 +507,7 @@ def render_dashboard():
                 st.markdown('<div class="section-title" style="margin-top:1rem;">Plan d\'entretien</div>',
                             unsafe_allow_html=True)
                 for pt in fiche.plan_entretien:
-                    with st.expander(f"{pt.ordre} — {pt.theme}", expanded=(pt.ordre <= 2)):
+                    with st.expander(pt.theme, expanded=(pt.ordre <= 2)):
                         st.caption(pt.contexte_chiffre)
                         st.markdown(f"*❓ {pt.question_ouverte}*")
                         if pt.mission_associee:
