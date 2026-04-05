@@ -48,11 +48,20 @@ Aucun texte hors JSON."""
 
 
 def generate_interview_plan(state: dict) -> dict:
-    donnees  = state["donnees_financieres"]
-    ratios   = state["ratios"]
-    signaux  = state["signaux_detectes"]
-    missions = state["missions_recommandees"]
+    donnees  = state.get("donnees_financieres")
+    ratios   = state.get("ratios")
+    signaux  = state.get("signaux_detectes", [])
+    missions = state.get("missions_recommandees", [])
     benchmark = state.get("benchmark")
+
+    if not donnees or not ratios:
+        logger.error("generate_interview_plan: données ou ratios manquants")
+        return {"fiche_entretien": FicheEntretien(
+            client_exercice="Données manquantes",
+            synthese_executive="La génération a échoué : données financières ou ratios manquants.",
+            conclusion_conseillee="Relancer l'analyse.",
+        )}
+
     llm = ChatOpenAI(model=os.getenv("LLM_MODEL", "gpt-4o"), temperature=0.2)
 
     def _n1(poste):

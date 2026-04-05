@@ -5,6 +5,8 @@ from urllib.parse import urlparse
 import httpx
 from langchain_core.tools import tool
 
+from utils.async_helper import run_async
+
 RELIABLE_DOMAINS = {
     "insee.fr",
     "banque-france.fr",
@@ -50,7 +52,7 @@ def perplexity_search(query: str) -> str:
         sources_str = "\n".join(f"- {s}" for s in sources[:10])
         return f"{content}\n\nSources:\n{sources_str}"
 
-    return asyncio.run(_call())
+    return run_async(_call())
 
 
 @tool
