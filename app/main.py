@@ -247,6 +247,7 @@ def render_dashboard():
     from app.components.charts   import render_benchmark_radar, render_signals_bar
     from app.components.cards    import render_signal, render_mission
     from app.components.download import get_word_bytes
+    from app.components.treasury import render_bfr_waterfall, render_cycle_bars, render_treasury_gauge
 
     analyse   = st.session_state["analyse"]
     donnees   = analyse["donnees_financieres"]
@@ -313,20 +314,21 @@ def render_dashboard():
     tab_labels = [
         "📊 Benchmark sectoriel",
         "🌐 Analyse sectorielle",
+        "💰 Trésorerie",
         f"🔍 Signaux ({len(signaux)})",
         f"🎯 Missions ({len(missions)})",
         "📋 Fiche entretien",
         "🎬 Slides Gamma",
     ]
     if has_n1:
-        tab_labels.insert(2, "📈 Évolution N/N-1")
+        tab_labels.insert(3, "📈 Évolution N/N-1")
 
     all_tabs = st.tabs(tab_labels)
 
     if has_n1:
-        t_bench, t_secteur, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
+        t_bench, t_secteur, t_treso, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
     else:
-        t_bench, t_secteur, t_sig, t_mis, t_fiche, t_slides = all_tabs
+        t_bench, t_secteur, t_treso, t_sig, t_mis, t_fiche, t_slides = all_tabs
         t_evol = None
 
     # ── Benchmark ─────────────────────────────────────────────────────────────
@@ -536,6 +538,63 @@ def render_dashboard():
                     titre = s.get("titre", url)
                     if url:
                         st.markdown(f"- [{html_lib.escape(titre or url)}]({url})")
+
+    # ── Trésorerie ────────────────────────────────────────────────────────────
+    with t_treso:
+        def var_pct(n, n1):
+            if n1 is None or n1 == 0:
+                return None
+            return round((n - n1) / abs(n1) * 100, 1)
+
+        bfr_var = var_pct(ratios.bfr, ratios.bfr_n1)
+        frng_var = var_pct(ratios.frng, ratios.frng_n1)
+        tn_var = var_pct(ratios.tresorerie_nette, ratios.tresorerie_nette_n1)
+
+        c1, c2, c3, c4 = st.columns(4)
+        kpi_html(c1, "BFR", fmt(ratios.bfr),
+                 dpct(bfr_var) if bfr_var is not None else None,
+                 (bfr_var or 0) <= 0)
+        kpi_html(c2, "FRNG", fmt(ratios.frng),
+                 dpct(frng_var) if frng_var is not None else None,
+                 (frng_var or 0) >= 0)
+        kpi_html(c3, "Trésorerie nette", fmt(ratios.tresorerie_nette),
+                 dpct(tn_var) if tn_var is not None else None,
+                 (tn_var or 0) >= 0)
+        kpi_html(c4, "Cycle de conversion",
+                 f"{ratios.cycle_conversion_jours:.0f} jours",
+                 None, True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col_wf, col_cy = st.columns([1, 1], gap="large")
+        with col_wf:
+            st.markdown('<div class="section-title">Décomposition du BFR</div>', unsafe_allow_html=True)
+            render_bfr_waterfall(ratios, donnees)
+        with col_cy:
+            st.markdown('<div class="section-title">Cycle de conversion (jours)</div>', unsafe_allow_html=True)
+            render_cycle_bars(ratios, benchmark)
+
+        st.markdown('<div class="section-title">Trésorerie nette</div>', unsafe_allow_html=True)
+        col_gauge, col_interp = st.columns([1, 1], gap="large")
+        with col_gauge:
+            render_treasury_gauge(ratios)
+        with col_interp:
+            jours = ratios.tresorerie_nette_jours_ca
+            if jours < 0:
+                st.error(f"**Trésorerie nette négative** ({jours:.0f} jours de CA) — Le FRNG ne couvre pas le BFR. Risque de cessation de paiement.")
+            elif jours < 15:
+                st.warning(f"**Trésorerie tendue** ({jours:.0f} jours de CA) — Marge de sécurité insuffisante. Un suivi prévisionnel est recommandé.")
+            else:
+                st.success(f"**Trésorerie confortable** ({jours:.0f} jours de CA) — L'entreprise dispose d'une marge de manoeuvre financière.")
+
+            if has_n1 and ratios.tresorerie_nette_n1 is not None:
+                delta = ratios.tresorerie_nette - ratios.tresorerie_nette_n1
+                if delta > 0:
+                    st.markdown(f"📈 Amélioration de **{fmt(delta)}** vs N-1")
+                elif delta < 0:
+                    st.markdown(f"📉 Dégradation de **{fmt(abs(delta))}** vs N-1")
+                else:
+                    st.markdown("➡️ Stable vs N-1")
 
     # ── Slides Gamma ─────────────────────────────────────────────────────────
     with t_slides:
