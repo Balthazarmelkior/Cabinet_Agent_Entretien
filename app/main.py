@@ -96,24 +96,31 @@ div[data-testid="stMetric"]{background:white;border-radius:12px;padding:.8rem;bo
 .stDownloadButton>button{background:#0F2044 !important;color:white !important;border-radius:8px !important;font-weight:600 !important;}
 
 /* File uploader — fix duplicated button text */
-[data-testid="stFileUploader"] button,
 [data-testid="stFileUploaderDropzone"] button,
-[data-testid="baseButton-secondary"] {
-    font-size:0 !important;
-    line-height:0 !important;
-    padding:.5rem 1.2rem !important;
-    border-radius:6px !important;
+[data-testid="stFileUploader"] button {
+    color:transparent !important;
     overflow:hidden !important;
+    max-width:6rem !important;
+    padding:.45rem 1rem !important;
+    border-radius:6px !important;
+    position:relative !important;
 }
-[data-testid="stFileUploader"] button::after,
+[data-testid="stFileUploaderDropzone"] button *,
+[data-testid="stFileUploader"] button * {
+    color:transparent !important;
+    font-size:0 !important;
+}
 [data-testid="stFileUploaderDropzone"] button::after,
-[data-testid="stFileUploaderDropzone"] [data-testid="baseButton-secondary"]::after {
+[data-testid="stFileUploader"] button::after {
     content:"Parcourir";
+    position:absolute !important;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    color:#0F2044 !important;
     font-size:.84rem !important;
-    line-height:normal !important;
     font-weight:500;
+    white-space:nowrap;
 }
-[data-testid="stFileUploaderDropzone"] small {font-size:.75rem !important;}
 </style>
 """, unsafe_allow_html=True)
 
