@@ -94,6 +94,11 @@ h1, h2, h3 { font-family: 'DM Serif Display', serif !important; }
 div[data-testid="stMetric"]{background:white;border-radius:12px;padding:.8rem;border:1px solid #E2E8F0;}
 [data-testid="stTab"] button{font-size:.88rem !important;}
 .stDownloadButton>button{background:#0F2044 !important;color:white !important;border-radius:8px !important;font-weight:600 !important;}
+
+/* File uploader */
+[data-testid="stFileUploader"] {width:100% !important;}
+[data-testid="stFileUploader"] section {padding:.6rem !important;}
+[data-testid="stFileUploader"] button {font-size:.82rem !important;white-space:nowrap !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -116,20 +121,22 @@ def render_form():
         with st.container(border=True):
             st.markdown("#### 📁 Fichiers client")
             fichier = st.file_uploader(
-                "FEC exercice N (.txt/.csv) ou bilan PDF *",
+                "FEC ou bilan N *",
                 type=["pdf", "txt", "csv"],
                 label_visibility="visible",
                 key="fec_n",
+                help="FEC (.txt/.csv) ou bilan PDF de l'exercice N",
             )
             if fichier:
                 ext = Path(fichier.name).suffix.upper()
                 st.success(f"N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
 
             fichier_n1 = st.file_uploader(
-                "FEC exercice N-1 (.txt/.csv) — optionnel",
+                "FEC N-1 (optionnel)",
                 type=["txt", "csv"],
                 label_visibility="visible",
                 key="fec_n1",
+                help="FEC de l'exercice N-1 pour les comparaisons",
             )
             if fichier_n1:
                 ext_n1 = Path(fichier_n1.name).suffix.upper()
