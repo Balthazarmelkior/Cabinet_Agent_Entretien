@@ -32,32 +32,51 @@ class BillanState(TypedDict, total=False):
     # ── Output ────────────────────────────────────────────────────────────────
     fiche_entretien: Optional[FicheEntretien]
 
+    # ── CARLA (Perplexity + SWOT + analyse micro) ──────────────────────
+    note_sectorielle: Optional[str]
+    sources_perplexity: Optional[list[dict]]
+    sources_valides: Optional[bool]
+    swot: Optional[dict]
+    analyse_micro: Optional[str]
+    questions_rdv: Optional[list[str]]
+
+    # ── Gamma ────────────────────────────────────────────────────────────
+    contenu_slides: Optional[str]
+    slides_url: Optional[str]
+
 
 def build_graph() -> any:
     from nodes.extract_financial_data import extract_financial_data
     from nodes.detect_signals import detect_signals
     from nodes.benchmark_sectoriel import benchmark_sectoriel
+    from nodes.analyse_sectorielle import analyse_sectorielle
     from nodes.match_missions import match_missions
     from nodes.generate_interview_plan import generate_interview_plan
+    from nodes.generate_slides import generate_slides
 
     builder = StateGraph(BillanState)
 
     builder.add_node("extract_financial_data", extract_financial_data)
     builder.add_node("detect_signals",         detect_signals)
     builder.add_node("benchmark_sectoriel",    benchmark_sectoriel)
+    builder.add_node("analyse_sectorielle",    analyse_sectorielle)
     builder.add_node("match_missions",         match_missions)
     builder.add_node("generate_interview_plan",generate_interview_plan)
+    builder.add_node("generate_slides",        generate_slides)
 
-    # Extraction → parallèle (signaux + benchmark)
+    # Extraction → parallèle (signaux + benchmark + sectorielle)
     builder.set_entry_point("extract_financial_data")
     builder.add_edge("extract_financial_data", "detect_signals")
     builder.add_edge("extract_financial_data", "benchmark_sectoriel")
+    builder.add_edge("extract_financial_data", "analyse_sectorielle")
 
-    # Convergence → matching → fiche
+    # Convergence → matching → fiche → slides
     builder.add_edge("detect_signals",      "match_missions")
     builder.add_edge("benchmark_sectoriel", "match_missions")
+    builder.add_edge("analyse_sectorielle", "match_missions")
     builder.add_edge("match_missions",      "generate_interview_plan")
-    builder.add_edge("generate_interview_plan", END)
+    builder.add_edge("generate_interview_plan", "generate_slides")
+    builder.add_edge("generate_slides", END)
 
     return builder.compile()
 

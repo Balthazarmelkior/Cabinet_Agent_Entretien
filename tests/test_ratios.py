@@ -175,3 +175,73 @@ def test_delai_fournisseurs_zero_when_no_purchases():
     r = compute_ratios(d)
     assert r.delai_fournisseurs_jours == 0.0
     assert r.rotation_stocks_jours == 0.0
+
+
+# ── Trésorerie (entreprise saine) ────────────────────────────────────────────
+# donnees_saine: clients=100k, stocks=60k, fourn=60k, CP=500k, dettes_fin=100k, immo=300k, CA=1M
+
+def test_bfr_saine(donnees_saine):
+    """BFR = clients(100k) + stocks(60k) - fournisseurs(60k) = 100k."""
+    r = compute_ratios(donnees_saine)
+    assert r.bfr == pytest.approx(100_000)
+
+
+def test_frng_saine(donnees_saine):
+    """FRNG = (CP 500k + dettes_fin 100k) - immo 300k = 300k."""
+    r = compute_ratios(donnees_saine)
+    assert r.frng == pytest.approx(300_000)
+
+
+def test_tresorerie_nette_saine(donnees_saine):
+    """Treso nette = FRNG(300k) - BFR(100k) = 200k."""
+    r = compute_ratios(donnees_saine)
+    assert r.tresorerie_nette == pytest.approx(200_000)
+
+
+def test_cycle_conversion_jours_saine(donnees_saine):
+    """Cycle = clients(36.5j) + stocks(54.75j) - fourn(54.75j) = 36.5j."""
+    r = compute_ratios(donnees_saine)
+    assert r.cycle_conversion_jours == pytest.approx(36.5, abs=1.0)
+
+
+def test_tresorerie_nette_jours_ca_saine(donnees_saine):
+    """Treso nette jours CA = 200k / 1M * 365 = 73j."""
+    r = compute_ratios(donnees_saine)
+    assert r.tresorerie_nette_jours_ca == pytest.approx(73.0, abs=1.0)
+
+
+# ── Trésorerie (entreprise risquée) ─────────────────────────────────────────
+# donnees_risquee: clients=50k, stocks=5k, fourn=100k, CP=30k, dettes_fin=200k, immo=200k, CA=500k
+
+def test_bfr_risquee(donnees_risquee):
+    """BFR = clients(50k) + stocks(5k) - fournisseurs(100k) = -45k."""
+    r = compute_ratios(donnees_risquee)
+    assert r.bfr == pytest.approx(-45_000)
+
+
+def test_frng_risquee(donnees_risquee):
+    """FRNG = (CP 30k + dettes_fin 200k) - immo 200k = 30k."""
+    r = compute_ratios(donnees_risquee)
+    assert r.frng == pytest.approx(30_000)
+
+
+def test_tresorerie_nette_risquee(donnees_risquee):
+    """Treso nette = FRNG(30k) - BFR(-45k) = 75k."""
+    r = compute_ratios(donnees_risquee)
+    assert r.tresorerie_nette == pytest.approx(75_000)
+
+
+def test_tresorerie_nette_jours_ca_risquee(donnees_risquee):
+    """Treso nette jours CA = 75k / 500k * 365 = 54.75j."""
+    r = compute_ratios(donnees_risquee)
+    assert r.tresorerie_nette_jours_ca == pytest.approx(54.75, abs=1.0)
+
+
+# ── N-1 variants ────────────────────────────────────────────────────────────
+
+def test_bfr_n1_none_when_no_n1(donnees_saine):
+    """BFR N-1 is None when montant_n1 not set."""
+    r = compute_ratios(donnees_saine)
+    assert r.bfr_n1 is None
+    assert r.frng_n1 is None
+    assert r.tresorerie_nette_n1 is None

@@ -94,6 +94,33 @@ h1, h2, h3 { font-family: 'DM Serif Display', serif !important; }
 div[data-testid="stMetric"]{background:white;border-radius:12px;padding:.8rem;border:1px solid #E2E8F0;}
 [data-testid="stTab"] button{font-size:.88rem !important;}
 .stDownloadButton>button{background:#0F2044 !important;color:white !important;border-radius:8px !important;font-weight:600 !important;}
+
+/* File uploader — fix duplicated button text */
+[data-testid="stFileUploaderDropzone"] button,
+[data-testid="stFileUploader"] button {
+    color:transparent !important;
+    overflow:hidden !important;
+    max-width:6rem !important;
+    padding:.45rem 1rem !important;
+    border-radius:6px !important;
+    position:relative !important;
+}
+[data-testid="stFileUploaderDropzone"] button *,
+[data-testid="stFileUploader"] button * {
+    color:transparent !important;
+    font-size:0 !important;
+}
+[data-testid="stFileUploaderDropzone"] button::after,
+[data-testid="stFileUploader"] button::after {
+    content:"Parcourir";
+    position:absolute !important;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    color:#0F2044 !important;
+    font-size:.84rem !important;
+    font-weight:500;
+    white-space:nowrap;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -113,44 +140,46 @@ def render_form():
     col_left, col_right = st.columns([1, 1], gap="large")
 
     with col_left:
-        st.markdown('<div class="section-card"><div class="section-title">📁 Fichiers client</div>', unsafe_allow_html=True)
-        fichier = st.file_uploader(
-            "FEC exercice N (.txt/.csv) ou bilan PDF *",
-            type=["pdf", "txt", "csv"],
-            label_visibility="visible",
-            key="fec_n",
-        )
-        if fichier:
-            ext = Path(fichier.name).suffix.upper()
-            st.success(f"✅ N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
+        with st.container(border=True):
+            st.markdown("#### 📁 Fichiers client")
+            fichier = st.file_uploader(
+                "FEC ou bilan N *",
+                type=["pdf", "txt", "csv"],
+                label_visibility="visible",
+                key="fec_n",
+                help="FEC (.txt/.csv) ou bilan PDF de l'exercice N",
+            )
+            if fichier:
+                ext = Path(fichier.name).suffix.upper()
+                st.success(f"N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
 
-        fichier_n1 = st.file_uploader(
-            "FEC exercice N-1 (.txt/.csv) — optionnel",
-            type=["txt", "csv"],
-            label_visibility="visible",
-            key="fec_n1",
-        )
-        if fichier_n1:
-            ext_n1 = Path(fichier_n1.name).suffix.upper()
-            st.success(f"✅ N-1 : {fichier_n1.name} — {ext_n1} — {fichier_n1.size // 1024} Ko")
-        st.markdown('</div>', unsafe_allow_html=True)
+            fichier_n1 = st.file_uploader(
+                "FEC N-1 (optionnel)",
+                type=["txt", "csv"],
+                label_visibility="visible",
+                key="fec_n1",
+                help="FEC de l'exercice N-1 pour les comparaisons",
+            )
+            if fichier_n1:
+                ext_n1 = Path(fichier_n1.name).suffix.upper()
+                st.success(f"N-1 : {fichier_n1.name} — {ext_n1} — {fichier_n1.size // 1024} Ko")
 
     with col_right:
-        st.markdown('<div class="section-card"><div class="section-title">⚙ Paramètres</div>', unsafe_allow_html=True)
-        nom_client = st.text_input("Nom du client *", placeholder="SARL Dupont & Fils")
-        c1, c2 = st.columns([3, 1])
-        with c1:
-            code_naf = st.text_input("Code NAF * (5 car.)", placeholder="4711F", max_chars=5)
-        with c2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
-        catalogue = st.text_input("Catalogue missions", value="data/catalogue_missions.json")
-        anonymiser = st.checkbox(
-            "🔒 Anonymiser les données",
-            value=True,
-            help="Masque les noms de société, SIREN et libellés tiers avant envoi aux agents IA",
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("#### ⚙ Paramètres")
+            nom_client = st.text_input("Nom du client *", placeholder="SARL Dupont & Fils")
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                code_naf = st.text_input("Code NAF * (5 car.)", placeholder="4711F", max_chars=5)
+            with c2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
+            catalogue = st.text_input("Catalogue missions", value="data/catalogue_missions.json")
+            anonymiser = st.checkbox(
+                "🔒 Anonymiser les données",
+                value=True,
+                help="Masque les noms de société, SIREN et libellés tiers avant envoi aux agents IA",
+            )
 
     st.markdown("<br>", unsafe_allow_html=True)
     _, col_btn, _ = st.columns([1, 2, 1])
@@ -185,12 +214,14 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None,
             tmp_path_n1 = tmp_n1.name
 
     etapes = [
-        (0.15, "📄 Extraction des données financières..."),
-        (0.35, "📐 Calcul des ratios..."),
-        (0.55, "🔍 Détection des signaux..."),
-        (0.72, "📊 Benchmarking sectoriel..."),
-        (0.87, "🎯 Matching des missions..."),
-        (0.95, "📝 Génération de la fiche d'entretien..."),
+        (0.12, "📄 Extraction des données financières..."),
+        (0.28, "📐 Calcul des ratios..."),
+        (0.42, "🔍 Détection des signaux..."),
+        (0.55, "📊 Benchmarking sectoriel..."),
+        (0.62, "🌐 Analyse sectorielle Perplexity..."),
+        (0.75, "🎯 Matching des missions..."),
+        (0.85, "📝 Génération de la fiche d'entretien..."),
+        (0.95, "🎬 Génération des slides Gamma..."),
     ]
 
     bar    = st.progress(0.0)
@@ -245,6 +276,7 @@ def render_dashboard():
     from app.components.charts   import render_benchmark_radar, render_signals_bar
     from app.components.cards    import render_signal, render_mission
     from app.components.download import get_word_bytes
+    from app.components.treasury import render_bfr_waterfall, render_cycle_bars, render_treasury_gauge
 
     analyse   = st.session_state["analyse"]
     donnees   = analyse["donnees_financieres"]
@@ -310,19 +342,22 @@ def render_dashboard():
     has_n1 = donnees.chiffre_affaires.montant_n1 is not None
     tab_labels = [
         "📊 Benchmark sectoriel",
+        "🌐 Analyse sectorielle",
+        "💰 Trésorerie",
         f"🔍 Signaux ({len(signaux)})",
         f"🎯 Missions ({len(missions)})",
         "📋 Fiche entretien",
+        "🎬 Slides Gamma",
     ]
     if has_n1:
-        tab_labels.insert(1, "📈 Évolution N/N-1")
+        tab_labels.insert(3, "📈 Évolution N/N-1")
 
     all_tabs = st.tabs(tab_labels)
 
     if has_n1:
-        t_bench, t_evol, t_sig, t_mis, t_fiche = all_tabs
+        t_bench, t_secteur, t_treso, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
     else:
-        t_bench, t_sig, t_mis, t_fiche = all_tabs
+        t_bench, t_secteur, t_treso, t_sig, t_mis, t_fiche, t_slides = all_tabs
         t_evol = None
 
     # ── Benchmark ─────────────────────────────────────────────────────────────
@@ -472,7 +507,7 @@ def render_dashboard():
                 st.markdown('<div class="section-title" style="margin-top:1rem;">Plan d\'entretien</div>',
                             unsafe_allow_html=True)
                 for pt in fiche.plan_entretien:
-                    with st.expander(f"{pt.ordre}. {pt.theme}", expanded=(pt.ordre <= 2)):
+                    with st.expander(pt.theme, expanded=(pt.ordre <= 2)):
                         st.caption(pt.contexte_chiffre)
                         st.markdown(f"*❓ {pt.question_ouverte}*")
                         if pt.mission_associee:
@@ -497,6 +532,169 @@ def render_dashboard():
                 st.markdown("**Comment conclure**")
                 st.info(fiche.conclusion_conseillee)
                 st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── Analyse sectorielle ──────────────────────────────────────────────────────
+    with t_secteur:
+        note = analyse.get("note_sectorielle")
+        sources = analyse.get("sources_perplexity", [])
+        valides = analyse.get("sources_valides", False)
+
+        if not note or note == "Analyse sectorielle non disponible.":
+            st.info("Analyse sectorielle non disponible (clé PERPLEXITY_API_KEY non configurée ou erreur API).")
+        else:
+            if valides:
+                st.markdown("""
+                <div style="background:#D1FAE5;border-radius:8px;padding:.6rem 1rem;
+                    margin-bottom:1rem;font-size:.85rem;color:#065F46;">
+                    <b>✅ Sources validées</b> — Données issues de sources officielles (INSEE, Banque de France, CCI)
+                </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div style="background:#FEF3C7;border-radius:8px;padding:.6rem 1rem;
+                    margin-bottom:1rem;font-size:.85rem;color:#92400E;">
+                    <b>⚠️ Sources non vérifiées</b> — Les sources n'ont pas pu être validées sur des domaines officiels
+                </div>""", unsafe_allow_html=True)
+
+            st.markdown('<div class="section-card">', unsafe_allow_html=True)
+            st.markdown(note)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            # SWOT sectoriel
+            swot = analyse.get("swot", {})
+            if swot and any(swot.get(k) for k in ("forces", "faiblesses", "opportunites", "menaces")):
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">📊 Analyse SWOT sectorielle</div>',
+                            unsafe_allow_html=True)
+                col_s1, col_s2 = st.columns(2, gap="medium")
+                with col_s1:
+                    with st.container(border=True):
+                        st.markdown("**💪 Forces**")
+                        for f in swot.get("forces", []):
+                            st.markdown(f"- {f}")
+                    with st.container(border=True):
+                        st.markdown("**🎯 Opportunités**")
+                        for o in swot.get("opportunites", []):
+                            st.markdown(f"- {o}")
+                with col_s2:
+                    with st.container(border=True):
+                        st.markdown("**⚠️ Faiblesses**")
+                        for f in swot.get("faiblesses", []):
+                            st.markdown(f"- {f}")
+                    with st.container(border=True):
+                        st.markdown("**🔴 Menaces**")
+                        for m in swot.get("menaces", []):
+                            st.markdown(f"- {m}")
+
+            # Analyse micro-économique
+            analyse_micro = analyse.get("analyse_micro", "")
+            if analyse_micro:
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">🔬 Analyse micro-économique</div>',
+                            unsafe_allow_html=True)
+                st.markdown(analyse_micro)
+
+            # Questions stratégiques RDV
+            questions = analyse.get("questions_rdv", [])
+            if questions:
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">❓ Questions stratégiques pour le RDV</div>',
+                            unsafe_allow_html=True)
+                for i, q in enumerate(questions, 1):
+                    st.markdown(f"**{i}.** {q}")
+
+            # Sources
+            if sources:
+                st.markdown('<div class="section-title" style="margin-top:1.2rem;">📎 Sources</div>',
+                            unsafe_allow_html=True)
+                for s in sources:
+                    url = s.get("url", "")
+                    titre = s.get("titre", url)
+                    if url:
+                        st.markdown(f"- [{html_lib.escape(titre or url)}]({url})")
+
+    # ── Trésorerie ────────────────────────────────────────────────────────────
+    with t_treso:
+        def var_pct(n, n1):
+            if n1 is None or n1 == 0:
+                return None
+            return round((n - n1) / abs(n1) * 100, 1)
+
+        bfr_var = var_pct(ratios.bfr, ratios.bfr_n1)
+        frng_var = var_pct(ratios.frng, ratios.frng_n1)
+        tn_var = var_pct(ratios.tresorerie_nette, ratios.tresorerie_nette_n1)
+
+        c1, c2, c3, c4 = st.columns(4)
+        kpi_html(c1, "BFR", fmt(ratios.bfr),
+                 dpct(bfr_var) if bfr_var is not None else None,
+                 (bfr_var or 0) <= 0)
+        kpi_html(c2, "FRNG", fmt(ratios.frng),
+                 dpct(frng_var) if frng_var is not None else None,
+                 (frng_var or 0) >= 0)
+        kpi_html(c3, "Trésorerie nette", fmt(ratios.tresorerie_nette),
+                 dpct(tn_var) if tn_var is not None else None,
+                 (tn_var or 0) >= 0)
+        kpi_html(c4, "Cycle de conversion",
+                 f"{ratios.cycle_conversion_jours:.0f} jours",
+                 None, True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col_wf, col_cy = st.columns([1, 1], gap="large")
+        with col_wf:
+            st.markdown('<div class="section-title">Décomposition du BFR</div>', unsafe_allow_html=True)
+            render_bfr_waterfall(ratios, donnees)
+        with col_cy:
+            st.markdown('<div class="section-title">Cycle de conversion (jours)</div>', unsafe_allow_html=True)
+            render_cycle_bars(ratios, benchmark)
+
+        st.markdown('<div class="section-title">Trésorerie nette</div>', unsafe_allow_html=True)
+        col_gauge, col_interp = st.columns([1, 1], gap="large")
+        with col_gauge:
+            render_treasury_gauge(ratios)
+        with col_interp:
+            jours = ratios.tresorerie_nette_jours_ca
+            if jours < 0:
+                st.error(f"**Trésorerie nette négative** ({jours:.0f} jours de CA) — Le FRNG ne couvre pas le BFR. Risque de cessation de paiement.")
+            elif jours < 15:
+                st.warning(f"**Trésorerie tendue** ({jours:.0f} jours de CA) — Marge de sécurité insuffisante. Un suivi prévisionnel est recommandé.")
+            else:
+                st.success(f"**Trésorerie confortable** ({jours:.0f} jours de CA) — L'entreprise dispose d'une marge de manoeuvre financière.")
+
+            if has_n1 and ratios.tresorerie_nette_n1 is not None:
+                delta = ratios.tresorerie_nette - ratios.tresorerie_nette_n1
+                if delta > 0:
+                    st.markdown(f"📈 Amélioration de **{fmt(delta)}** vs N-1")
+                elif delta < 0:
+                    st.markdown(f"📉 Dégradation de **{fmt(abs(delta))}** vs N-1")
+                else:
+                    st.markdown("➡️ Stable vs N-1")
+
+    # ── Slides Gamma ─────────────────────────────────────────────────────────
+    with t_slides:
+        slides_url = analyse.get("slides_url")
+        contenu = analyse.get("contenu_slides", "")
+
+        if not slides_url:
+            st.info("Présentation non disponible (clé GAMMA_API_KEY non configurée ou erreur API).")
+            if contenu:
+                st.markdown("**Aperçu du contenu généré :**")
+                with st.expander("Contenu Markdown", expanded=False):
+                    st.markdown(contenu)
+        else:
+            st.markdown(f"""
+            <div style="background:#EEF2FF;border-radius:10px;padding:.75rem 1.2rem;
+                margin-bottom:1rem;font-size:.85rem;">
+                <b>🎬 Présentation générée</b> — 10 slides
+            </div>""", unsafe_allow_html=True)
+
+            st.link_button("🔗 Ouvrir la présentation Gamma", slides_url, use_container_width=True)
+
+            st.markdown(f"""
+            <iframe src="{slides_url}/embed" width="100%" height="500"
+                    frameborder="0" style="border-radius:12px;margin-top:1rem;"
+                    allowfullscreen></iframe>
+            """, unsafe_allow_html=True)
+
+            if contenu:
+                with st.expander("📄 Contenu source (Markdown)"):
+                    st.code(contenu, language="markdown")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

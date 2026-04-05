@@ -23,6 +23,14 @@ def _ratios(**overrides) -> Ratios:
         rotation_stocks_jours=30.0,
         variation_ca_pct=None,
         variation_resultat_pct=None,
+        bfr=100_000.0,
+        frng=300_000.0,
+        tresorerie_nette=200_000.0,
+        cycle_conversion_jours=20.0,
+        tresorerie_nette_jours_ca=73.0,
+        bfr_n1=None,
+        frng_n1=None,
+        tresorerie_nette_n1=None,
     )
     defaults.update(overrides)
     return Ratios(**defaults)

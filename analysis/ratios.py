@@ -30,6 +30,16 @@ class Ratios:
     variation_ca_pct: Optional[float]
     variation_resultat_pct: Optional[float]
 
+    # Trésorerie
+    bfr: float
+    frng: float
+    tresorerie_nette: float
+    cycle_conversion_jours: float
+    tresorerie_nette_jours_ca: float
+    bfr_n1: Optional[float]
+    frng_n1: Optional[float]
+    tresorerie_nette_n1: Optional[float]
+
 
 def compute_ratios(d: DonneesFinancieres) -> Ratios:
     ca = d.chiffre_affaires.montant_n
@@ -54,6 +64,33 @@ def compute_ratios(d: DonneesFinancieres) -> Ratios:
     dettes_ct       = dettes_fourn or 1
     actif_circulant = stocks + clients + tresorerie
 
+    # Activity ratios (extracted to reuse for cycle)
+    delai_clients   = round(clients / ca * 365, 0)
+    delai_fourn     = round(dettes_fourn / achats * 365, 0) if achats > 0 else 0.0
+    rotation_stocks = round(stocks / achats * 365, 0) if achats > 0 else 0.0
+
+    # Treasury
+    bfr  = clients + stocks - dettes_fourn
+    frng = (cp + dettes_fin) - d.immobilisations_nettes.montant_n
+    tn   = frng - bfr
+    tn_jours = round(tn / ca * 365, 1)
+    cycle_conv = round(delai_clients + rotation_stocks - delai_fourn, 1)
+
+    # N-1 variants
+    bfr_n1 = None
+    frng_n1 = None
+    tn_n1 = None
+    if d.creances_clients.montant_n1 is not None:
+        clients_n1    = d.creances_clients.montant_n1
+        stocks_n1     = d.stocks.montant_n1 or 0
+        fourn_n1      = d.dettes_fournisseurs.montant_n1 or 0
+        cp_n1         = d.capitaux_propres.montant_n1 or 0
+        dettes_fin_n1 = d.dettes_financieres.montant_n1 or 0
+        immo_n1       = d.immobilisations_nettes.montant_n1 or 0
+        bfr_n1  = clients_n1 + stocks_n1 - fourn_n1
+        frng_n1 = (cp_n1 + dettes_fin_n1) - immo_n1
+        tn_n1   = frng_n1 - bfr_n1
+
     return Ratios(
         taux_marge_brute         = round((ca - achats) / ca * 100, 1),
         taux_ebe                 = round(ebe / ca * 100, 1),
@@ -62,9 +99,17 @@ def compute_ratios(d: DonneesFinancieres) -> Ratios:
         ratio_liquidite_generale = round(actif_circulant / dettes_ct, 2),
         couverture_dettes        = round(dettes_fin / ebe, 1) if ebe > 0 else 99.0,
         autonomie_financiere     = round(cp / total_passif * 100, 1),
-        delai_clients_jours      = round(clients / ca * 365, 0),
-        delai_fournisseurs_jours = round(dettes_fourn / achats * 365, 0) if achats > 0 else 0.0,
-        rotation_stocks_jours    = round(stocks / achats * 365, 0) if achats > 0 else 0.0,
+        delai_clients_jours      = delai_clients,
+        delai_fournisseurs_jours = delai_fourn,
+        rotation_stocks_jours    = rotation_stocks,
         variation_ca_pct         = d.chiffre_affaires.variation_pct,
         variation_resultat_pct   = d.resultat_net.variation_pct,
+        bfr                      = bfr,
+        frng                     = frng,
+        tresorerie_nette         = tn,
+        cycle_conversion_jours   = cycle_conv,
+        tresorerie_nette_jours_ca = tn_jours,
+        bfr_n1                   = bfr_n1,
+        frng_n1                  = frng_n1,
+        tresorerie_nette_n1      = tn_n1,
     )
