@@ -11,17 +11,43 @@ logger = logging.getLogger(__name__)
 
 TRUSTED_DOMAINS = ["insee.fr", "banque-france.fr", "cci.fr", "finess.sante.gouv.fr"]
 
-PROMPT = """Tu es analyste sectoriel expert. Rédige une note sectorielle structurée
-pour le secteur NAF {code_naf} ({secteur}).
+PROMPT = """Tu es analyste sectoriel senior spécialisé en accompagnement de cabinets d'expertise comptable.
+Rédige une note sectorielle complète, stratégique et prospective pour le secteur NAF {code_naf} ({secteur}).
 
-Inclus :
-- Tendances macro du secteur (croissance, emploi, investissement)
-- Ratios financiers médians du secteur
-- Risques et opportunités spécifiques
-- Réglementation récente impactante
+Structure ta note avec les sections suivantes :
 
-Source tes affirmations (INSEE, Banque de France, CCI).
-Format Markdown structuré, 500-800 mots."""
+## 1. Vue d'ensemble du secteur
+- Taille du marché, nombre d'entreprises, chiffre d'affaires global
+- Évolution récente (croissance, contraction, stagnation)
+- Positionnement dans l'économie française
+
+## 2. Tendances macro et conjoncturelles
+- Croissance du secteur, emploi, investissement
+- Impact de l'inflation, des taux d'intérêt, de la conjoncture
+- Tendances de digitalisation et transformation
+
+## 3. Ratios financiers médians du secteur
+- Marge brute, EBE, résultat net
+- Délais de paiement clients et fournisseurs
+- Taux d'endettement, liquidité
+
+## 4. Analyse SWOT sectorielle
+- Forces et faiblesses structurelles
+- Opportunités de développement
+- Menaces et risques majeurs
+
+## 5. Réglementation et conformité
+- Évolutions réglementaires récentes et à venir
+- Obligations spécifiques au secteur
+- Impact fiscal
+
+## 6. Perspectives stratégiques (12-24 mois)
+- Scénarios d'évolution probables
+- Leviers de croissance identifiés
+- Recommandations pour les dirigeants
+
+Source tes affirmations avec des données vérifiables.
+Format Markdown structuré, 1000-1500 mots."""
 
 
 async def _search_perplexity(query: str) -> dict:
@@ -29,7 +55,7 @@ async def _search_perplexity(query: str) -> dict:
     if not api_key:
         return {"content": "", "sources": [], "sources_valides": False}
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=90.0) as client:
         response = await client.post(
             "https://api.perplexity.ai/chat/completions",
             headers={
@@ -37,11 +63,9 @@ async def _search_perplexity(query: str) -> dict:
                 "Content-Type": "application/json",
             },
             json={
-                "model": "llama-3.1-sonar-large-128k-online",
+                "model": "sonar-pro",
                 "messages": [{"role": "user", "content": query}],
                 "return_citations": True,
-                "search_recency_filter": "month",
-                "search_domain_filter": TRUSTED_DOMAINS,
             },
         )
         response.raise_for_status()
