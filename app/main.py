@@ -113,44 +113,44 @@ def render_form():
     col_left, col_right = st.columns([1, 1], gap="large")
 
     with col_left:
-        st.markdown('<div class="section-card"><div class="section-title">📁 Fichiers client</div>', unsafe_allow_html=True)
-        fichier = st.file_uploader(
-            "FEC exercice N (.txt/.csv) ou bilan PDF *",
-            type=["pdf", "txt", "csv"],
-            label_visibility="visible",
-            key="fec_n",
-        )
-        if fichier:
-            ext = Path(fichier.name).suffix.upper()
-            st.success(f"✅ N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
+        with st.container(border=True):
+            st.markdown("#### 📁 Fichiers client")
+            fichier = st.file_uploader(
+                "FEC exercice N (.txt/.csv) ou bilan PDF *",
+                type=["pdf", "txt", "csv"],
+                label_visibility="visible",
+                key="fec_n",
+            )
+            if fichier:
+                ext = Path(fichier.name).suffix.upper()
+                st.success(f"N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
 
-        fichier_n1 = st.file_uploader(
-            "FEC exercice N-1 (.txt/.csv) — optionnel",
-            type=["txt", "csv"],
-            label_visibility="visible",
-            key="fec_n1",
-        )
-        if fichier_n1:
-            ext_n1 = Path(fichier_n1.name).suffix.upper()
-            st.success(f"✅ N-1 : {fichier_n1.name} — {ext_n1} — {fichier_n1.size // 1024} Ko")
-        st.markdown('</div>', unsafe_allow_html=True)
+            fichier_n1 = st.file_uploader(
+                "FEC exercice N-1 (.txt/.csv) — optionnel",
+                type=["txt", "csv"],
+                label_visibility="visible",
+                key="fec_n1",
+            )
+            if fichier_n1:
+                ext_n1 = Path(fichier_n1.name).suffix.upper()
+                st.success(f"N-1 : {fichier_n1.name} — {ext_n1} — {fichier_n1.size // 1024} Ko")
 
     with col_right:
-        st.markdown('<div class="section-card"><div class="section-title">⚙ Paramètres</div>', unsafe_allow_html=True)
-        nom_client = st.text_input("Nom du client *", placeholder="SARL Dupont & Fils")
-        c1, c2 = st.columns([3, 1])
-        with c1:
-            code_naf = st.text_input("Code NAF * (5 car.)", placeholder="4711F", max_chars=5)
-        with c2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
-        catalogue = st.text_input("Catalogue missions", value="data/catalogue_missions.json")
-        anonymiser = st.checkbox(
-            "🔒 Anonymiser les données",
-            value=True,
-            help="Masque les noms de société, SIREN et libellés tiers avant envoi aux agents IA",
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("#### ⚙ Paramètres")
+            nom_client = st.text_input("Nom du client *", placeholder="SARL Dupont & Fils")
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                code_naf = st.text_input("Code NAF * (5 car.)", placeholder="4711F", max_chars=5)
+            with c2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
+            catalogue = st.text_input("Catalogue missions", value="data/catalogue_missions.json")
+            anonymiser = st.checkbox(
+                "🔒 Anonymiser les données",
+                value=True,
+                help="Masque les noms de société, SIREN et libellés tiers avant envoi aux agents IA",
+            )
 
     st.markdown("<br>", unsafe_allow_html=True)
     _, col_btn, _ = st.columns([1, 2, 1])
