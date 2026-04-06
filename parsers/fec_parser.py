@@ -164,3 +164,30 @@ def extraire_tresorerie_mensuelle(fec_path: str) -> list["SoldeMensuel"]:
         soldes.append(SoldeMensuel(mois=str(mois), solde=round(cumul, 2)))
 
     return soldes
+
+
+def extraire_ca_mensuel(fec_path: str) -> list["SoldeMensuel"]:
+    """Extrait le CA cumulé mois par mois depuis les comptes 70."""
+    from models import SoldeMensuel
+
+    df = _load_df(fec_path)
+    mask = df["CompteNum"].str.startswith("70")
+    df_ca = df[mask].copy()
+
+    if df_ca.empty:
+        return []
+
+    df_ca["mois"] = df_ca["EcritureDate"].str[:6].apply(
+        lambda x: f"{x[:4]}-{x[4:6]}"
+    )
+
+    # Comptes 70 matchent ^7 → _load_df calcule Credit - Debit → Montant positif pour le CA
+    mensuel = df_ca.groupby("mois")["Montant"].sum().sort_index()
+
+    soldes = []
+    cumul = 0.0
+    for mois, ca in mensuel.items():
+        cumul += ca
+        soldes.append(SoldeMensuel(mois=str(mois), solde=round(cumul, 2)))
+
+    return soldes
