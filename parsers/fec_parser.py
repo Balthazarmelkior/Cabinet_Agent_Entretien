@@ -133,3 +133,34 @@ def parse_fec(fec_path: str, fec_path_n1: str | None = None, anonymize: bool = F
         dettes_financieres    = _poste("Dettes financières",      sums["dettes_financieres"],    n1("dettes_financieres")),
         dettes_fournisseurs   = _poste("Dettes fournisseurs",     sums["dettes_fournisseurs"],   n1("dettes_fournisseurs")),
     )
+
+
+def extraire_tresorerie_mensuelle(fec_path: str) -> list["SoldeMensuel"]:
+    """Extrait les soldes mensuels cumulés des comptes de trésorerie (50-53)."""
+    from models import SoldeMensuel
+
+    df = _load_df(fec_path)
+    mask = df["CompteNum"].str.startswith(("50", "51", "52", "53"))
+    df_treso = df[mask].copy()
+
+    if df_treso.empty:
+        return []
+
+    df_treso["mois"] = df_treso["EcritureDate"].str[:6].apply(
+        lambda x: f"{x[:4]}-{x[4:6]}"
+    )
+
+    if "Montant" not in df.columns or df_treso["Montant"].isna().all():
+        df_treso["flux"] = df_treso["Debit"] - df_treso["Credit"]
+    else:
+        df_treso["flux"] = df_treso["Montant"]
+
+    mensuel = df_treso.groupby("mois")["flux"].sum().sort_index()
+
+    soldes = []
+    cumul = 0.0
+    for mois, flux in mensuel.items():
+        cumul += flux
+        soldes.append(SoldeMensuel(mois=str(mois), solde=round(cumul, 2)))
+
+    return soldes
