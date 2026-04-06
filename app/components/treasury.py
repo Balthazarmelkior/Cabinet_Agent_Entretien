@@ -138,3 +138,57 @@ def render_treasury_gauge(ratios: Ratios):
         paper_bgcolor="rgba(0,0,0,0)",
     )
     st.plotly_chart(fig, use_container_width=True)
+
+
+def render_tresorerie_curve(soldes: list, bfr: float):
+    """Courbe trésorerie mensuelle avec seuil BFR."""
+    if not soldes:
+        st.info("Données mensuelles non disponibles (uniquement pour les fichiers FEC).")
+        return
+
+    mois_labels = []
+    MOIS_COURT = {
+        "01": "Jan", "02": "Fév", "03": "Mar", "04": "Avr",
+        "05": "Mai", "06": "Juin", "07": "Juil", "08": "Août",
+        "09": "Sep", "10": "Oct", "11": "Nov", "12": "Déc",
+    }
+    for s in soldes:
+        mm = s.mois.split("-")[1]
+        mois_labels.append(MOIS_COURT.get(mm, mm))
+
+    valeurs = [s.solde for s in soldes]
+
+    fig = go.Figure()
+
+    # Courbe trésorerie
+    fig.add_trace(go.Scatter(
+        x=mois_labels,
+        y=valeurs,
+        mode="lines+markers",
+        name="Trésorerie",
+        line=dict(color="#3B82F6", width=2.5),
+        marker=dict(size=7, color="#3B82F6"),
+        fill="tozeroy",
+        fillcolor="rgba(59, 130, 246, 0.08)",
+    ))
+
+    # Ligne seuil BFR
+    fig.add_trace(go.Scatter(
+        x=mois_labels,
+        y=[bfr] * len(mois_labels),
+        mode="lines",
+        name=f"Seuil BFR ({bfr:,.0f} €)".replace(",", "\u202f"),
+        line=dict(color="#DC2626", width=2, dash="dash"),
+    ))
+
+    fig.update_layout(
+        height=350,
+        margin=dict(t=30, b=30, l=20, r=20),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        yaxis=dict(gridcolor="#F0F0F0", tickformat=","),
+        xaxis=dict(gridcolor="#F0F0F0"),
+        legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, use_container_width=True)
