@@ -165,9 +165,10 @@ def render_form():
                     info_entreprise = cache[siren]
 
                     if info_entreprise:
+                        naf_label = f" ({info_entreprise.libelle_naf})" if info_entreprise.libelle_naf else ""
                         st.info(
                             f"SIREN **{siren}** détecté — **{info_entreprise.denomination}** "
-                            f"— NAF {info_entreprise.code_naf} ({info_entreprise.libelle_naf or ''})"
+                            f"— NAF {info_entreprise.code_naf}{naf_label}"
                         )
 
             fichier_n1 = st.file_uploader(
