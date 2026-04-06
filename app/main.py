@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
+from services.sirene import extraire_siren, rechercher_entreprise
 
 st.set_page_config(
     page_title="Entretien Bilan",
@@ -149,9 +150,25 @@ def render_form():
                 key="fec_n",
                 help="FEC (.txt/.csv) ou bilan PDF de l'exercice N",
             )
+
+            # ── Lookup SIREN automatique ─────────────────────────
+            info_entreprise = None
             if fichier:
                 ext = Path(fichier.name).suffix.upper()
                 st.success(f"N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
+
+                siren = extraire_siren(fichier.name)
+                if siren:
+                    cache = st.session_state.setdefault("cache_sirene", {})
+                    if siren not in cache:
+                        cache[siren] = rechercher_entreprise(siren)
+                    info_entreprise = cache[siren]
+
+                    if info_entreprise:
+                        st.info(
+                            f"SIREN **{siren}** détecté — **{info_entreprise.denomination}** "
+                            f"— NAF {info_entreprise.code_naf} ({info_entreprise.libelle_naf or ''})"
+                        )
 
             fichier_n1 = st.file_uploader(
                 "FEC N-1 (optionnel)",
@@ -167,10 +184,21 @@ def render_form():
     with col_right:
         with st.container(border=True):
             st.markdown("#### ⚙ Paramètres")
-            nom_client = st.text_input("Nom du client *", placeholder="SARL Dupont & Fils")
+            default_nom = info_entreprise.denomination if info_entreprise else ""
+            default_naf = info_entreprise.code_naf.replace(".", "") if info_entreprise else ""
+            nom_client = st.text_input(
+                "Nom du client *",
+                value=default_nom,
+                placeholder="SARL Dupont & Fils",
+            )
             c1, c2 = st.columns([3, 1])
             with c1:
-                code_naf = st.text_input("Code NAF * (5 car.)", placeholder="4711F", max_chars=5)
+                code_naf = st.text_input(
+                    "Code NAF * (5 car.)",
+                    value=default_naf,
+                    placeholder="4711F",
+                    max_chars=5,
+                )
             with c2:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
