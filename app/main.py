@@ -305,7 +305,8 @@ def render_dashboard():
     from app.components.charts   import render_benchmark_radar, render_signals_bar
     from app.components.cards    import render_signal, render_mission
     from app.components.download import get_word_bytes
-    from app.components.treasury import render_bfr_waterfall, render_cycle_bars, render_treasury_gauge
+    from app.components.treasury import render_bfr_waterfall, render_cycle_bars, render_treasury_gauge, render_tresorerie_curve
+    from app.components.activity import render_ca_curve
 
     analyse   = st.session_state["analyse"]
     donnees   = analyse["donnees_financieres"]
@@ -316,6 +317,9 @@ def render_dashboard():
     fiche     = analyse.get("fiche_entretien")
     client    = st.session_state["nom_client"]
     naf       = st.session_state.get("code_naf", "")
+    soldes_mensuels = analyse.get("soldes_mensuels", [])
+    ca_mensuel_n = analyse.get("ca_mensuel_n", [])
+    ca_mensuel_n1 = analyse.get("ca_mensuel_n1", [])
 
     # Bandeau client
     col_info, col_reset = st.columns([5, 1])
@@ -373,20 +377,21 @@ def render_dashboard():
         "📊 Benchmark sectoriel",
         "🌐 Analyse sectorielle",
         "💰 Trésorerie",
+        "📈 Activité",
         f"🔍 Signaux ({len(signaux)})",
         f"🎯 Missions ({len(missions)})",
         "📋 Fiche entretien",
         "🎬 Slides Gamma",
     ]
     if has_n1:
-        tab_labels.insert(3, "📈 Évolution N/N-1")
+        tab_labels.insert(4, "📊 Évolution N/N-1")
 
     all_tabs = st.tabs(tab_labels)
 
     if has_n1:
-        t_bench, t_secteur, t_treso, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
+        t_bench, t_secteur, t_treso, t_activite, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
     else:
-        t_bench, t_secteur, t_treso, t_sig, t_mis, t_fiche, t_slides = all_tabs
+        t_bench, t_secteur, t_treso, t_activite, t_sig, t_mis, t_fiche, t_slides = all_tabs
         t_evol = None
 
     # ── Benchmark ─────────────────────────────────────────────────────────────
@@ -665,6 +670,12 @@ def render_dashboard():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # ── Courbe trésorerie mensuelle ──
+        st.markdown('<div class="section-title">Trésorerie mensuelle</div>', unsafe_allow_html=True)
+        render_tresorerie_curve(soldes_mensuels, ratios.bfr)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         col_wf, col_cy = st.columns([1, 1], gap="large")
         with col_wf:
             st.markdown('<div class="section-title">Décomposition du BFR</div>', unsafe_allow_html=True)
@@ -694,6 +705,43 @@ def render_dashboard():
                     st.markdown(f"📉 Dégradation de **{fmt(abs(delta))}** vs N-1")
                 else:
                     st.markdown("➡️ Stable vs N-1")
+
+    # ── Activité ─────────────────────────────────────────────────────────────
+    with t_activite:
+        st.markdown('<div class="section-title">Chiffre d\'affaires cumulé vs seuil de rentabilité</div>',
+                    unsafe_allow_html=True)
+
+        # Calcul du seuil de rentabilité
+        ca = donnees.chiffre_affaires.montant_n
+        achats = donnees.achats_consommes.montant_n
+        charges_ext = donnees.charges_externes.montant_n
+        charges_pers = donnees.charges_personnel.montant_n
+
+        taux_marge_brute = (ca - achats) / ca if ca else 0
+        charges_fixes = charges_ext + charges_pers
+        seuil = charges_fixes / taux_marge_brute if taux_marge_brute > 0 else 0
+
+        render_ca_curve(ca_mensuel_n, ca_mensuel_n1 or None, seuil)
+
+        # Interprétation
+        if ca_mensuel_n and seuil > 0:
+            mois_franchissement = None
+            for s in ca_mensuel_n:
+                if s.solde >= seuil:
+                    mm = s.mois.split("-")[1]
+                    mois_map = {
+                        "01": "janvier", "02": "février", "03": "mars", "04": "avril",
+                        "05": "mai", "06": "juin", "07": "juillet", "08": "août",
+                        "09": "septembre", "10": "octobre", "11": "novembre", "12": "décembre",
+                    }
+                    mois_franchissement = mois_map.get(mm, mm)
+                    break
+
+            if mois_franchissement:
+                st.success(f"Le point mort est atteint en **{mois_franchissement}**. "
+                           f"Seuil de rentabilité : **{seuil:,.0f} €** de CA cumulé.".replace(",", "\u202f"))
+            else:
+                st.error(f"Le point mort (**{seuil:,.0f} €**) n'est pas atteint sur l'exercice.".replace(",", "\u202f"))
 
     # ── Slides Gamma ─────────────────────────────────────────────────────────
     with t_slides:
