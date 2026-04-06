@@ -31,6 +31,7 @@ def _ratios(**overrides) -> Ratios:
         bfr_n1=None,
         frng_n1=None,
         tresorerie_nette_n1=None,
+        seuil_rentabilite=500_000.0,
     )
     defaults.update(overrides)
     return Ratios(**defaults)

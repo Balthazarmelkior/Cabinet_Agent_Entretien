@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
+from services.sirene import extraire_siren, rechercher_entreprise
 
 st.set_page_config(
     page_title="Entretien Bilan",
@@ -149,9 +150,26 @@ def render_form():
                 key="fec_n",
                 help="FEC (.txt/.csv) ou bilan PDF de l'exercice N",
             )
+
+            # ── Lookup SIREN automatique ─────────────────────────
+            info_entreprise = None
             if fichier:
                 ext = Path(fichier.name).suffix.upper()
                 st.success(f"N : {fichier.name} — {ext} — {fichier.size // 1024} Ko")
+
+                siren = extraire_siren(fichier.name)
+                if siren:
+                    cache = st.session_state.setdefault("cache_sirene", {})
+                    if siren not in cache:
+                        cache[siren] = rechercher_entreprise(siren)
+                    info_entreprise = cache[siren]
+
+                    if info_entreprise:
+                        naf_label = f" ({info_entreprise.libelle_naf})" if info_entreprise.libelle_naf else ""
+                        st.info(
+                            f"SIREN **{siren}** détecté — **{info_entreprise.denomination}** "
+                            f"— NAF {info_entreprise.code_naf}{naf_label}"
+                        )
 
             fichier_n1 = st.file_uploader(
                 "FEC N-1 (optionnel)",
@@ -167,10 +185,21 @@ def render_form():
     with col_right:
         with st.container(border=True):
             st.markdown("#### ⚙ Paramètres")
-            nom_client = st.text_input("Nom du client *", placeholder="SARL Dupont & Fils")
+            default_nom = info_entreprise.denomination if info_entreprise else ""
+            default_naf = info_entreprise.code_naf.replace(".", "") if info_entreprise else ""
+            nom_client = st.text_input(
+                "Nom du client *",
+                value=default_nom,
+                placeholder="SARL Dupont & Fils",
+            )
             c1, c2 = st.columns([3, 1])
             with c1:
-                code_naf = st.text_input("Code NAF * (5 car.)", placeholder="4711F", max_chars=5)
+                code_naf = st.text_input(
+                    "Code NAF * (5 car.)",
+                    value=default_naf,
+                    placeholder="4711F",
+                    max_chars=5,
+                )
             with c2:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
@@ -276,7 +305,8 @@ def render_dashboard():
     from app.components.charts   import render_benchmark_radar, render_signals_bar
     from app.components.cards    import render_signal, render_mission
     from app.components.download import get_word_bytes
-    from app.components.treasury import render_bfr_waterfall, render_cycle_bars, render_treasury_gauge
+    from app.components.treasury import render_bfr_waterfall, render_cycle_bars, render_treasury_gauge, render_tresorerie_curve
+    from app.components.activity import render_ca_curve
 
     analyse   = st.session_state["analyse"]
     donnees   = analyse["donnees_financieres"]
@@ -287,6 +317,9 @@ def render_dashboard():
     fiche     = analyse.get("fiche_entretien")
     client    = st.session_state["nom_client"]
     naf       = st.session_state.get("code_naf", "")
+    soldes_mensuels = analyse.get("soldes_mensuels", [])
+    ca_mensuel_n = analyse.get("ca_mensuel_n", [])
+    ca_mensuel_n1 = analyse.get("ca_mensuel_n1", [])
 
     # Bandeau client
     col_info, col_reset = st.columns([5, 1])
@@ -344,20 +377,21 @@ def render_dashboard():
         "📊 Benchmark sectoriel",
         "🌐 Analyse sectorielle",
         "💰 Trésorerie",
+        "📈 Activité",
         f"🔍 Signaux ({len(signaux)})",
         f"🎯 Missions ({len(missions)})",
         "📋 Fiche entretien",
         "🎬 Slides Gamma",
     ]
     if has_n1:
-        tab_labels.insert(3, "📈 Évolution N/N-1")
+        tab_labels.insert(4, "📊 Évolution N/N-1")
 
     all_tabs = st.tabs(tab_labels)
 
     if has_n1:
-        t_bench, t_secteur, t_treso, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
+        t_bench, t_secteur, t_treso, t_activite, t_evol, t_sig, t_mis, t_fiche, t_slides = all_tabs
     else:
-        t_bench, t_secteur, t_treso, t_sig, t_mis, t_fiche, t_slides = all_tabs
+        t_bench, t_secteur, t_treso, t_activite, t_sig, t_mis, t_fiche, t_slides = all_tabs
         t_evol = None
 
     # ── Benchmark ─────────────────────────────────────────────────────────────
@@ -636,6 +670,12 @@ def render_dashboard():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # ── Courbe trésorerie mensuelle ──
+        st.markdown('<div class="section-title">Trésorerie mensuelle</div>', unsafe_allow_html=True)
+        render_tresorerie_curve(soldes_mensuels, ratios.bfr)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         col_wf, col_cy = st.columns([1, 1], gap="large")
         with col_wf:
             st.markdown('<div class="section-title">Décomposition du BFR</div>', unsafe_allow_html=True)
@@ -665,6 +705,35 @@ def render_dashboard():
                     st.markdown(f"📉 Dégradation de **{fmt(abs(delta))}** vs N-1")
                 else:
                     st.markdown("➡️ Stable vs N-1")
+
+    # ── Activité ─────────────────────────────────────────────────────────────
+    with t_activite:
+        st.markdown('<div class="section-title">Chiffre d\'affaires cumulé vs seuil de rentabilité</div>',
+                    unsafe_allow_html=True)
+
+        seuil = ratios.seuil_rentabilite
+
+        render_ca_curve(ca_mensuel_n, ca_mensuel_n1 or None, seuil)
+
+        # Interprétation
+        if ca_mensuel_n and seuil > 0:
+            mois_franchissement = None
+            for s in ca_mensuel_n:
+                if s.solde >= seuil:
+                    mm = s.mois.split("-")[1]
+                    mois_map = {
+                        "01": "janvier", "02": "février", "03": "mars", "04": "avril",
+                        "05": "mai", "06": "juin", "07": "juillet", "08": "août",
+                        "09": "septembre", "10": "octobre", "11": "novembre", "12": "décembre",
+                    }
+                    mois_franchissement = mois_map.get(mm, mm)
+                    break
+
+            if mois_franchissement:
+                st.success(f"Le point mort est atteint en **{mois_franchissement}**. "
+                           f"Seuil de rentabilité : **{seuil:,.0f} €** de CA cumulé.".replace(",", "\u202f"))
+            else:
+                st.error(f"Le point mort (**{seuil:,.0f} €**) n'est pas atteint sur l'exercice.".replace(",", "\u202f"))
 
     # ── Slides Gamma ─────────────────────────────────────────────────────────
     with t_slides:

@@ -9,7 +9,7 @@ load_dotenv()
 
 from models import (
     DonneesFinancieres, FicheEntretien, BenchmarkSectoriel,
-    Signal, MissionRecommandee
+    Signal, MissionRecommandee, SoldeMensuel
 )
 from analysis.ratios import Ratios
 
@@ -24,6 +24,9 @@ class BillanState(TypedDict, total=False):
 
     # ── Intermédiaires ────────────────────────────────────────────────────────
     donnees_financieres: Optional[DonneesFinancieres]
+    soldes_mensuels: Optional[list[SoldeMensuel]]
+    ca_mensuel_n: Optional[list[SoldeMensuel]]
+    ca_mensuel_n1: Optional[list[SoldeMensuel]]
     ratios: Optional[Ratios]
     signaux_detectes: Optional[list[Signal]]
     benchmark: Optional[BenchmarkSectoriel]

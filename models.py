@@ -43,6 +43,11 @@ class DonneesFinancieres(BaseModel):
     code_naf: Optional[str] = None
 
 
+class SoldeMensuel(BaseModel):
+    mois: str      # "2024-01"
+    solde: float   # solde cumulé en euros
+
+
 # ─── Signaux ──────────────────────────────────────────────────────────────────
 
 class TypeSignal(str, Enum):
