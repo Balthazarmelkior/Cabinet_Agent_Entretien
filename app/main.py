@@ -711,15 +711,7 @@ def render_dashboard():
         st.markdown('<div class="section-title">Chiffre d\'affaires cumulé vs seuil de rentabilité</div>',
                     unsafe_allow_html=True)
 
-        # Calcul du seuil de rentabilité
-        ca = donnees.chiffre_affaires.montant_n
-        achats = donnees.achats_consommes.montant_n
-        charges_ext = donnees.charges_externes.montant_n
-        charges_pers = donnees.charges_personnel.montant_n
-
-        taux_marge_brute = (ca - achats) / ca if ca else 0
-        charges_fixes = charges_ext + charges_pers
-        seuil = charges_fixes / taux_marge_brute if taux_marge_brute > 0 else 0
+        seuil = ratios.seuil_rentabilite
 
         render_ca_curve(ca_mensuel_n, ca_mensuel_n1 or None, seuil)
 

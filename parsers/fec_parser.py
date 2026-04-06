@@ -135,11 +135,12 @@ def parse_fec(fec_path: str, fec_path_n1: str | None = None, anonymize: bool = F
     )
 
 
-def extraire_tresorerie_mensuelle(fec_path: str) -> list["SoldeMensuel"]:
+def extraire_tresorerie_mensuelle(fec_path: str, df: "pd.DataFrame | None" = None) -> list["SoldeMensuel"]:
     """Extrait les soldes mensuels cumulés des comptes de trésorerie (50-53)."""
     from models import SoldeMensuel
 
-    df = _load_df(fec_path)
+    if df is None:
+        df = _load_df(fec_path)
     mask = df["CompteNum"].str.startswith(("50", "51", "52", "53"))
     df_treso = df[mask].copy()
 
@@ -166,11 +167,12 @@ def extraire_tresorerie_mensuelle(fec_path: str) -> list["SoldeMensuel"]:
     return soldes
 
 
-def extraire_ca_mensuel(fec_path: str) -> list["SoldeMensuel"]:
+def extraire_ca_mensuel(fec_path: str, df: "pd.DataFrame | None" = None) -> list["SoldeMensuel"]:
     """Extrait le CA cumulé mois par mois depuis les comptes 70."""
     from models import SoldeMensuel
 
-    df = _load_df(fec_path)
+    if df is None:
+        df = _load_df(fec_path)
     mask = df["CompteNum"].str.startswith("70")
     df_ca = df[mask].copy()
 

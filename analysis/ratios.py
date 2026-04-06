@@ -40,6 +40,9 @@ class Ratios:
     frng_n1: Optional[float]
     tresorerie_nette_n1: Optional[float]
 
+    # Seuil de rentabilité
+    seuil_rentabilite: float
+
 
 def compute_ratios(d: DonneesFinancieres) -> Ratios:
     ca = d.chiffre_affaires.montant_n
@@ -75,6 +78,11 @@ def compute_ratios(d: DonneesFinancieres) -> Ratios:
     tn   = frng - bfr
     tn_jours = round(tn / ca * 365, 1)
     cycle_conv = round(delai_clients + rotation_stocks - delai_fourn, 1)
+
+    # Seuil de rentabilité (point mort)
+    taux_marge_brute_pct = (ca - achats) / ca if ca else 0
+    charges_fixes_approx = charges_ext + charges_pers
+    seuil_rent = round(charges_fixes_approx / taux_marge_brute_pct, 2) if taux_marge_brute_pct > 0 else 0
 
     # N-1 variants
     bfr_n1 = None
@@ -112,4 +120,5 @@ def compute_ratios(d: DonneesFinancieres) -> Ratios:
         bfr_n1                   = bfr_n1,
         frng_n1                  = frng_n1,
         tresorerie_nette_n1      = tn_n1,
+        seuil_rentabilite        = seuil_rent,
     )

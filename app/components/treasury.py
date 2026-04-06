@@ -142,19 +142,13 @@ def render_treasury_gauge(ratios: Ratios):
 
 def render_tresorerie_curve(soldes: list, bfr: float):
     """Courbe trésorerie mensuelle avec seuil BFR."""
+    from app.components.date_utils import mois_labels as _mois_labels
+
     if not soldes:
         st.info("Données mensuelles non disponibles (uniquement pour les fichiers FEC).")
         return
 
-    mois_labels = []
-    MOIS_COURT = {
-        "01": "Jan", "02": "Fév", "03": "Mar", "04": "Avr",
-        "05": "Mai", "06": "Juin", "07": "Juil", "08": "Août",
-        "09": "Sep", "10": "Oct", "11": "Nov", "12": "Déc",
-    }
-    for s in soldes:
-        mm = s.mois.split("-")[1]
-        mois_labels.append(MOIS_COURT.get(mm, mm))
+    mois_labels = _mois_labels(soldes)
 
     valeurs = [s.solde for s in soldes]
 
