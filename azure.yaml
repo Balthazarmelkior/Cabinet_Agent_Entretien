@@ -1,0 +1,20 @@
+name: cabinet-agent-entretien
+
+metadata:
+  template: cabinet-agent-entretien@0.1.0
+
+services:
+  api:
+    project: .
+    language: python
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
+
+infra:
+  path: ./infra
+  module: main
+
+pipeline:
+  provider: github
