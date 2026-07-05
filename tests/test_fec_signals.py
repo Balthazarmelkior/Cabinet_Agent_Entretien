@@ -60,6 +60,23 @@ def test_override_abaisse_le_seuil():
     assert "REMUNERATION_DIRIGEANT_ELEVEE" in _codes(df, overrides={"REMUNERATION_DIRIGEANT_ELEVEE": 25000})
 
 
+def test_presence_honore_override():
+    # PENALITES_FISCALES parametrable : override à 1000 supprime un petit montant
+    df = _df([("671200", 500, 0, "20240201")])
+    assert "PENALITES_FISCALES" in _codes(df)                      # défaut 0
+    assert "PENALITES_FISCALES" not in _codes(df, overrides={"PENALITES_FISCALES": 1000})
+
+
+def test_mouvement_nouvel_associe_sans_nettage():
+    # écriture au débit ET au crédit sur les comptes → mouvement > 0 quel que soit le solde net
+    df = _df([("4561", 10000, 0, "20240101"), ("108000", 0, 5000, "20240101")])
+    assert "NOUVEL_ASSOCIE" in _codes(df)
+
+
+def test_construction_en_cours_via_mouvement():
+    assert "CONSTRUCTION_EN_COURS" in _codes(_df([("231000", 40000, 0, "20240101")]))
+
+
 def test_signaux_sont_des_models_signal():
     from models import Signal
     feat = compute_fec_features(_df([("641100", 60000, 0, "20240131")]))

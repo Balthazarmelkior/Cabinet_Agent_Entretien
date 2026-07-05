@@ -856,7 +856,7 @@ Dans le bloc du formulaire (après le champ `catalogue` et avant le bouton), ajo
         seuils_overrides = {}
         st.caption("Ajustez les seuils des signaux paramétrables. Vide = valeur par défaut.")
         for _code, _def in sorted(_defauts.items()):
-            _titre = GENERIC_SIGNALS[_code][6]  # champ titre de la table
+            _titre = GENERIC_SIGNALS[_code].titre  # NamedTuple GenericSpec
             _val = st.number_input(f"{_titre} ({_code})", min_value=0.0, value=float(_def), step=1000.0, key=f"seuil_{_code}")
             if _val != _def:
                 seuils_overrides[_code] = _val
