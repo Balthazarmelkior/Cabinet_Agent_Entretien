@@ -122,3 +122,112 @@ def test_variation_absente_sans_n1():
 
 def test_resultat_bnc_eleve():
     assert "RESULTAT_BNC_ELEVE" in _codes(_df([("120000", 0, 120000, "20241231")]))  # RN 120k > 100k
+
+
+def test_sous_remuneration_dirigeant_sans_salaire():
+    # 6411 = 0 (dividendes uniquement) + RN 100k > 80k → doit déclencher
+    df = _df([("120000", 0, 100000, "20241231")])
+    assert "SOUS_REMUNERATION_DIRIGEANT" in _codes(df)
+
+
+# --- Couverture des 12 détecteurs restants ---
+
+def test_ratio_dividendes_eleve():
+    df = _df([("457000", 0, 70000, "20240101"), ("641100", 100000, 0, "20240101")])  # 70% > 60%
+    assert "RATIO_DIVIDENDES_ELEVE" in _codes(df)
+    df2 = _df([("457000", 0, 50000, "20240101"), ("641100", 100000, 0, "20240101")])  # 50%
+    assert "RATIO_DIVIDENDES_ELEVE" not in _codes(df2)
+
+
+def test_charges_sociales_perso_elevees():
+    df = _df([("646000", 40000, 0, "20240101"), ("120000", 0, 100000, "20241231")])  # 40% > 30%
+    assert "CHARGES_SOCIALES_PERSO_ELEVEES" in _codes(df)
+    df2 = _df([("646000", 20000, 0, "20240101"), ("120000", 0, 100000, "20241231")])  # 20%
+    assert "CHARGES_SOCIALES_PERSO_ELEVEES" not in _codes(df2)
+
+
+def test_amortissements_avances():
+    df = _df([("281300", 0, 90000, "20240101"), ("213000", 100000, 0, "20240101")])  # 90% > 80%
+    assert "AMORTISSEMENTS_AVANCES" in _codes(df)
+    df2 = _df([("281300", 0, 70000, "20240101"), ("213000", 100000, 0, "20240101")])  # 70%
+    assert "AMORTISSEMENTS_AVANCES" not in _codes(df2)
+
+
+def test_absence_interessement():
+    assert "ABSENCE_INTERESSEMENT" in _codes(_df([("120000", 0, 100000, "20241231")]))
+    df = _df([("120000", 0, 100000, "20241231"), ("641400", 2000, 0, "20240101")])
+    assert "ABSENCE_INTERESSEMENT" not in _codes(df)
+
+
+def test_absence_provision_ifc():
+    assert "ABSENCE_PROVISION_IFC" in _codes(_df([("641100", 120000, 0, "20240101")]))
+    df = _df([("641100", 120000, 0, "20240101"), ("153000", 0, 5000, "20240101")])
+    assert "ABSENCE_PROVISION_IFC" not in _codes(df)
+
+
+def test_absence_force_commerciale():
+    assert "ABSENCE_FORCE_COMMERCIALE" in _codes(_df([("706000", 0, 250000, "20240101")]))
+    df = _df([("706000", 0, 250000, "20240101"), ("622100", 3000, 0, "20240101")])
+    assert "ABSENCE_FORCE_COMMERCIALE" not in _codes(df)
+
+
+def test_depenses_pub_sans_effet():
+    df_n = _df([("623100", 6000, 0, "20240101"), ("706000", 0, 200000, "20240101")])
+    df_n1 = _df([("706000", 0, 200000, "20230101")])  # CA plat
+    assert "DEPENSES_PUB_SANS_EFFET" in _codes(df_n, df_n1)
+    df_n1_hausse = _df([("706000", 0, 150000, "20230101")])  # CA en hausse
+    assert "DEPENSES_PUB_SANS_EFFET" not in _codes(df_n, df_n1_hausse)
+
+
+def test_immo_locatif_non_amorti():
+    assert "IMMO_LOCATIF_NON_AMORTI" in _codes(_df([("213000", 100000, 0, "20240101")]))
+    df = _df([("213000", 100000, 0, "20240101"), ("281300", 0, 1000, "20240101")])
+    assert "IMMO_LOCATIF_NON_AMORTI" not in _codes(df)
+
+
+def test_frais_bancaires_en_hausse():
+    df_n = _df([("627000", 12000, 0, "20240101")])
+    df_n1 = _df([("627000", 10000, 0, "20230101")])  # +20%
+    assert "FRAIS_BANCAIRES_EN_HAUSSE" in _codes(df_n, df_n1)
+
+
+def test_hausse_immobilisations():
+    df_n = _df([("215000", 120000, 0, "20240101")])
+    df_n1 = _df([("215000", 100000, 0, "20230101")])  # +20%
+    assert "HAUSSE_IMMOBILISATIONS" in _codes(df_n, df_n1)
+
+
+def test_honoraires_exceptionnels_en_hausse():
+    df_n = _df([("622600", 15000, 0, "20240101")])
+    df_n1 = _df([("622600", 10000, 0, "20230101")])  # +50%
+    assert "HONORAIRES_EXCEPTIONNELS_EN_HAUSSE" in _codes(df_n, df_n1)
+
+
+def test_variation_remuneration_dirigeant():
+    df_n = _df([("641100", 60000, 0, "20240101")])
+    df_n1 = _df([("641100", 50000, 0, "20230101")])  # +20% ≥ 15%
+    assert "VARIATION_REMUNERATION_DIRIGEANT" in _codes(df_n, df_n1)
+    df_n2 = _df([("641100", 52000, 0, "20240101")])
+    df_n1_2 = _df([("641100", 50000, 0, "20230101")])  # +4% < 15%
+    assert "VARIATION_REMUNERATION_DIRIGEANT" not in _codes(df_n2, df_n1_2)
+
+
+def test_augmentation_capital():
+    df_n = _df([("101000", 0, 50000, "20240101")])
+    df_n1 = _df([("101000", 0, 30000, "20230101")])  # capital en hausse
+    assert "AUGMENTATION_CAPITAL" in _codes(df_n, df_n1)
+    df_n_egal = _df([("101000", 0, 30000, "20240101")])
+    assert "AUGMENTATION_CAPITAL" not in _codes(df_n_egal, df_n1)
+
+
+def test_cca_gravite_paliers():
+    from analysis.fec_features import compute_fec_features
+    from analysis.fec_signals import detect_signals_from_fec
+    from models import Gravite
+    def _grav(montant):
+        feat = compute_fec_features(_df([("4551", 0, montant, "20240101")]))
+        s = next(x for x in detect_signals_from_fec(feat, {}) if x.code == "COMPTE_COURANT_CREDITEUR_ELEVE")
+        return s.gravite
+    assert _grav(90000) == Gravite.FAIBLE
+    assert _grav(120000) == Gravite.MOYENNE
+    assert _grav(160000) == Gravite.ELEVEE

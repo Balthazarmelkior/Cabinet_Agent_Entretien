@@ -197,7 +197,7 @@ def _absence_prevoyance_madelin(f: IndicateursFEC) -> Signal | None:
 
 
 def _sous_remuneration_dirigeant(f: IndicateursFEC) -> Signal | None:
-    if f.solde(["12"], "C") <= 80000 or not (0 < f.solde(["6411"], "D") < 40000):
+    if f.solde(["12"], "C") <= 80000 or f.solde(["6411"], "D") >= 40000:
         return None
     return _sig("SOUS_REMUNERATION_DIRIGEANT", X, M, "Sous-rémunération du dirigeant",
                 "Résultat > 80 000 € mais rémunération dirigeant < 40 000 € : arbitrage à étudier.",
