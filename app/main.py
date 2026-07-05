@@ -210,6 +210,20 @@ def render_form():
                 help="Masque les noms de société, SIREN et libellés tiers avant envoi aux agents IA",
             )
 
+    with st.expander("⚙️ Seuils de détection (avancé)"):
+        import json as _json
+        from analysis.fec_signals import seuils_parametrables, GENERIC_SIGNALS
+        _ref = _json.loads(Path("data/seuils_signaux.json").read_text(encoding="utf-8"))
+        _defauts = seuils_parametrables(_ref)
+        seuils_overrides = {}
+        st.caption("Ajustez les seuils des signaux paramétrables. Valeur = défaut → ignoré.")
+        for _code, _def in sorted(_defauts.items()):
+            _titre = GENERIC_SIGNALS[_code].titre
+            _val = st.number_input(f"{_titre} ({_code})", min_value=0.0, value=float(_def),
+                                   step=1000.0, key=f"seuil_{_code}")
+            if _val != _def:
+                seuils_overrides[_code] = _val
+
     st.markdown("<br>", unsafe_allow_html=True)
     _, col_btn, _ = st.columns([1, 2, 1])
     with col_btn:
@@ -221,13 +235,13 @@ def render_form():
         )
 
     if lancer:
-        run_analysis(fichier, nom_client, code_naf, catalogue, fichier_n1, anonymiser)
+        run_analysis(fichier, nom_client, code_naf, catalogue, fichier_n1, anonymiser, seuils_overrides)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ANALYSE
 # ─────────────────────────────────────────────────────────────────────────────
-def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None, anonymize=False):
+def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None, anonymize=False, seuils_overrides=None):
     from graph import build_graph
 
     tmp_path    = None
@@ -267,6 +281,7 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None,
             "catalogue_path":  catalogue_path,
             "code_naf":        code_naf.upper().strip(),
             "anonymize":       anonymize,
+            "seuils_overrides": seuils_overrides or {},
         }):
             if step_idx < len(etapes):
                 pct, label = etapes[step_idx]
@@ -279,6 +294,14 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None,
 
         bar.progress(1.0, text="✅ Analyse terminée !")
         status.empty()
+
+        suffix = Path(fichier.name).suffix.lower()
+        if suffix in (".txt", ".csv") and final_state.get("indicateurs_fec") is None:
+            st.warning(
+                "⚠️ Signaux fins FEC non disponibles : format de fichier non reconnu "
+                "(colonnes Débit/Crédit ou Montant+Sens attendues). Les signaux détaillés "
+                "sur comptes n'ont pas pu être calculés."
+            )
 
         st.session_state["analyse"]      = final_state
         st.session_state["nom_client"]   = nom_client
