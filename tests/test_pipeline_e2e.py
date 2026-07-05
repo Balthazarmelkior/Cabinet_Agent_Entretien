@@ -163,13 +163,11 @@ def test_full_pipeline_match_missions(catalogue_path):
         ratios = compute_ratios(donnees)
         signaux = detect_signals_from_rules(ratios)
 
-        with patch("nodes.match_missions.ChatOpenAI") as mock_cls:
-            mock_cls.return_value = _mock_llm("[]")
-            from nodes.match_missions import match_missions
-            match_state = match_missions({
-                "signaux_detectes": signaux,
-                "catalogue_path": catalogue_path,
-            })
+        from nodes.match_missions import match_missions
+        match_state = match_missions({
+            "signaux_detectes": signaux,
+            "catalogue_path": catalogue_path,
+        })
 
         assert "missions_recommandees" in match_state
         assert len(match_state["missions_recommandees"]) > 0
@@ -200,16 +198,14 @@ def test_end_to_end_all_nodes_sequential(catalogue_path):
 
     try:
         with patch("nodes.detect_signals.ChatOpenAI") as m1, \
-             patch("nodes.match_missions.ChatOpenAI") as m2, \
-             patch("nodes.generate_interview_plan.ChatOpenAI") as m3, \
+             patch("nodes.generate_interview_plan.ChatOpenAI") as m2, \
              patch("nodes.benchmark_sectoriel.ChatOpenAI"), \
              patch("benchmark.sources.bdf.BanqueDeFranceSource.fetch",
                    return_value=mock_bdf), \
              patch("benchmark.sources.insee.InseeSource.fetch", return_value=None):
 
             m1.return_value = _mock_llm("[]")
-            m2.return_value = _mock_llm("[]")
-            m3.return_value = _mock_llm(PLAN_JSON)
+            m2.return_value = _mock_llm(PLAN_JSON)
 
             from nodes.extract_financial_data import extract_financial_data
             from nodes.detect_signals import detect_signals

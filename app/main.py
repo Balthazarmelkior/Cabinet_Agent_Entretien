@@ -203,7 +203,7 @@ def render_form():
             with c2:
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.link_button("Chercher NAF", "https://www.insee.fr/fr/metadonnees/nafr2/")
-            catalogue = st.text_input("Catalogue missions", value="data/catalogue_missions.json")
+            catalogue = st.text_input("Catalogue missions", value="data/catalogue_missions_tyls.json")
             anonymiser = st.checkbox(
                 "🔒 Anonymiser les données",
                 value=True,

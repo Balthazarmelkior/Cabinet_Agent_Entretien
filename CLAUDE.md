@@ -29,9 +29,10 @@ streamlit run app/main.py
 | `INSEE_API_KEY` | No | — | INSEE Esane API (benchmark fallback) |
 | `LLM_MODEL` | No | `gpt-4o` | LLM model to use |
 | `EMBEDDING_MODEL` | No | `text-embedding-3-small` | RAG embeddings |
-| `CATALOGUE_PATH` | No | `data/catalogue_missions.json` | Mission catalog location |
+| `CATALOGUE_PATH` | No | `data/catalogue_missions_tyls.json` | Mission catalog location |
 | `BDF_CACHE_DIR` | No | `data/bdf_cache` | Banque de France API cache |
 | `RAG_THRESHOLD` | No | `50` | Catalog size above which RAG is used instead of direct LLM matching |
+| `SEUILS_PATH` | No | `data/seuils_signaux.json` | Référentiel des signaux FEC (matcher déterministe) |
 
 ## Architecture
 
@@ -87,7 +88,7 @@ To add a new deterministic signal: add a rule function in `analysis/rules.py` fo
 - **≤50 missions** (`llm_matcher.py`): All missions passed directly to GPT-4o for scoring (0.0–1.0).
 - **>50 missions** (`rag_matcher.py`): Chroma vectorstore retrieves top-k candidates per signal, then LLM scores the shortlist.
 
-The threshold is controlled by `RAG_THRESHOLD` env variable. The mission catalog lives in `data/catalogue_missions.json`.
+The threshold is controlled by `RAG_THRESHOLD` env variable. The mission catalog lives in `data/catalogue_missions_tyls.json`.
 
 ### Interview Plan Generation (`nodes/generate_interview_plan.py`)
 
@@ -116,7 +117,7 @@ pytest tests/test_specific.py  # single test file
 
 ## Mission Catalog Format
 
-Missions in `data/catalogue_missions.json` follow this schema:
+Missions in `data/catalogue_missions_tyls.json` follow this schema:
 
 ```json
 {

@@ -16,7 +16,7 @@ import pytest
 from models import DonneesFinancieres, PosteComptable
 
 FEC_PATH = str(ROOT / "input" / "443021456FEC20250831.txt")
-CATALOGUE_PATH = str(ROOT / "data" / "catalogue_missions.json")
+CATALOGUE_PATH = str(ROOT / "data" / "catalogue_missions_tyls.json")
 
 
 @pytest.fixture
