@@ -31,6 +31,11 @@ def detect_signals(state: dict) -> dict:
     ratios = compute_ratios(donnees)
     signaux = detect_signals_from_rules(ratios) + detect_signals_from_donnees(donnees, ratios)
 
+    features = state.get("indicateurs_fec")
+    if features is not None:
+        from analysis.fec_signals import detect_signals_from_fec
+        signaux += detect_signals_from_fec(features, state.get("seuils_overrides") or {})
+
     # Enrichissement LLM
     context = {
         "donnees": donnees.model_dump(),

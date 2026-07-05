@@ -95,6 +95,31 @@ class TestDetectSignalsNode:
         assert len(result["signaux_detectes"]) > 0
 
 
+class TestFecSignalsWiring:
+    def test_detect_signals_includes_fec_codes(self, donnees_saine):
+        import pandas as pd
+        from unittest.mock import patch, MagicMock
+        from analysis.fec_features import compute_fec_features
+
+        df = pd.DataFrame([{"CompteNum": "641100", "Debit": 60000, "Credit": 0, "EcritureDate": "20240131"}])
+        feat = compute_fec_features(df)  # REMUNERATION_DIRIGEANT_ELEVEE
+
+        with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+            inst = MagicMock()
+            resp = MagicMock(); resp.content = "[]"
+            inst.invoke.return_value = resp
+            mock_cls.return_value = inst
+            from nodes.detect_signals import detect_signals
+            result = detect_signals({
+                "donnees_financieres": donnees_saine,
+                "indicateurs_fec": feat,
+                "seuils_overrides": {},
+            })
+
+        codes = {s.code for s in result["signaux_detectes"]}
+        assert "REMUNERATION_DIRIGEANT_ELEVEE" in codes
+
+
 # ── Node generate_interview_plan ─────────────────────────────────────────────
 
 class TestGenerateInterviewPlanNode:

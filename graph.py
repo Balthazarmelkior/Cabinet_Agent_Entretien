@@ -12,6 +12,7 @@ from models import (
     Signal, MissionRecommandee, SoldeMensuel
 )
 from analysis.ratios import Ratios
+from analysis.fec_features import IndicateursFEC
 
 
 class BillanState(TypedDict, total=False):
@@ -28,6 +29,8 @@ class BillanState(TypedDict, total=False):
     ca_mensuel_n: Optional[list[SoldeMensuel]]
     ca_mensuel_n1: Optional[list[SoldeMensuel]]
     ratios: Optional[Ratios]
+    indicateurs_fec: Optional["IndicateursFEC"]
+    seuils_overrides: dict
     signaux_detectes: Optional[list[Signal]]
     benchmark: Optional[BenchmarkSectoriel]
     missions_recommandees: Optional[list[MissionRecommandee]]
@@ -90,6 +93,7 @@ def prepare_entretien_bilan(
     code_naf: str,
     fichier_path_n1: Optional[str] = None,
     anonymize: bool = False,
+    seuils_overrides: Optional[dict] = None,
 ) -> BillanState:
     """Point d'entrée principal."""
     graph = build_graph()
@@ -99,4 +103,5 @@ def prepare_entretien_bilan(
         "catalogue_path":  catalogue_path,
         "code_naf":        code_naf.upper().strip(),
         "anonymize":       anonymize,
+        "seuils_overrides": seuils_overrides or {},
     })

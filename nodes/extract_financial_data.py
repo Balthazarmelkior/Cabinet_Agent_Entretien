@@ -1,7 +1,10 @@
 # nodes/extract_financial_data.py
+import logging
 import os
 from pathlib import Path
 from langchain_openai import ChatOpenAI
+
+logger = logging.getLogger(__name__)
 
 
 def extract_financial_data(state: dict) -> dict:
@@ -21,12 +24,21 @@ def extract_financial_data(state: dict) -> dict:
         soldes_mensuels = extraire_tresorerie_mensuelle(str(file_path), df=df_n)
         ca_mensuel_n = extraire_ca_mensuel(str(file_path), df=df_n)
         ca_mensuel_n1 = extraire_ca_mensuel(str(file_path_n1)) if file_path_n1 else []
+
+        from analysis.fec_features import compute_fec_features
+        df_n1 = _load_df(str(file_path_n1)) if file_path_n1 else None
+        try:
+            indicateurs_fec = compute_fec_features(df_n, df_n1)
+        except ValueError as exc:
+            logger.warning("Indicateurs FEC non calculés : %s", exc)
+            indicateurs_fec = None
     elif suffix == ".pdf":
         from parsers.pdf_parser import parse_pdf
         donnees = parse_pdf(str(file_path), llm, anonymize=anonymize)
         soldes_mensuels = []
         ca_mensuel_n = []
         ca_mensuel_n1 = []
+        indicateurs_fec = None
     else:
         raise ValueError(f"Format non supporté : {suffix}. Attendu : .txt, .csv, .pdf")
 
@@ -39,4 +51,5 @@ def extract_financial_data(state: dict) -> dict:
         "soldes_mensuels": soldes_mensuels,
         "ca_mensuel_n": ca_mensuel_n,
         "ca_mensuel_n1": ca_mensuel_n1,
+        "indicateurs_fec": indicateurs_fec,
     }
