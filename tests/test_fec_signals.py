@@ -82,3 +82,43 @@ def test_signaux_sont_des_models_signal():
     feat = compute_fec_features(_df([("641100", 60000, 0, "20240131")]))
     sigs = detect_signals_from_fec(feat, {})
     assert all(isinstance(s, Signal) for s in sigs)
+
+
+# --- Détecteurs explicites ---
+
+def test_ratio_charges_sociales_elevees():
+    df = _df([("645000", 50000, 0, "20240101"), ("641100", 100000, 0, "20240101")])  # 50% > 45%
+    assert "CHARGES_SOCIALES_ELEVEES" in _codes(df)
+    df2 = _df([("645000", 40000, 0, "20240101"), ("641100", 100000, 0, "20240101")])  # 40% < 45%
+    assert "CHARGES_SOCIALES_ELEVEES" not in _codes(df2)
+
+
+def test_composite_compte_courant_crediteur():
+    assert "COMPTE_COURANT_CREDITEUR_ELEVE" in _codes(_df([("4551", 0, 80000, "20240101")]))
+    assert "COMPTE_COURANT_CREDITEUR_ELEVE" not in _codes(_df([("4551", 0, 30000, "20240101")]))
+
+
+def test_composite_absence_prevoyance_madelin():
+    assert "ABSENCE_PREVOYANCE_MADELIN" in _codes(_df([("641100", 40000, 0, "20240101")]))
+    df = _df([("641100", 40000, 0, "20240101"), ("646700", 2000, 0, "20240101")])
+    assert "ABSENCE_PREVOYANCE_MADELIN" not in _codes(df)
+
+
+def test_composite_sous_remuneration_dirigeant():
+    df = _df([("120000", 0, 100000, "20241231"), ("641100", 30000, 0, "20240101")])
+    assert "SOUS_REMUNERATION_DIRIGEANT" in _codes(df)
+
+
+def test_variation_frais_financiers_en_hausse():
+    df_n = _df([("661000", 12000, 0, "20240101")])
+    df_n1 = _df([("661000", 10000, 0, "20230101")])  # +20%
+    assert "FRAIS_FINANCIERS_EN_HAUSSE" in _codes(df_n, df_n1)
+
+
+def test_variation_absente_sans_n1():
+    df_n = _df([("661000", 99999, 0, "20240101")])
+    assert "FRAIS_FINANCIERS_EN_HAUSSE" not in _codes(df_n)
+
+
+def test_resultat_bnc_eleve():
+    assert "RESULTAT_BNC_ELEVE" in _codes(_df([("120000", 0, 120000, "20241231")]))  # RN 120k > 100k

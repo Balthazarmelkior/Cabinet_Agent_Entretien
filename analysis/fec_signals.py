@@ -120,6 +120,177 @@ def seuils_parametrables(referentiel: dict) -> dict[str, float]:
     return out
 
 
+def _sig(code, typ, grav, titre, desc, levier) -> Signal:
+    return Signal(type=typ, gravite=grav, code=code, titre=titre, description=desc, levier=levier)
+
+
+# --- Ratios ---
+def _charges_sociales_elevees(f: IndicateursFEC) -> Signal | None:
+    r = f.ratio_pct(["645"], ["641"], "D", "D")
+    if r is None or r <= 45:
+        return None
+    return _sig("CHARGES_SOCIALES_ELEVEES", X, M, "Charges sociales élevées",
+                f"Charges sociales / salaires bruts = {r:.0f}% (seuil 45%).",
+                "Audit et optimisation sociale, intéressement/PEE")
+
+
+def _ratio_dividendes_eleve(f: IndicateursFEC) -> Signal | None:
+    r = f.ratio_pct(["457"], ["6411"], "C", "D")
+    if r is None or r <= 60:
+        return None
+    return _sig("RATIO_DIVIDENDES_ELEVE", X, M, "Ratio dividendes/salaire élevé",
+                f"Dividendes / rémunération = {r:.0f}% (seuil 60%).",
+                "Rémunération optimisée du dirigeant, statut social")
+
+
+def _charges_sociales_perso_elevees(f: IndicateursFEC) -> Signal | None:
+    r = f.ratio_pct(["646"], ["12"], "D", "C")
+    if r is None or r <= 30:
+        return None
+    return _sig("CHARGES_SOCIALES_PERSO_ELEVEES", X, F, "Charges sociales personnelles élevées",
+                f"Cotisations perso dirigeant / résultat = {r:.0f}% (seuil 30%).",
+                "Optimisation du statut social du dirigeant")
+
+
+def _amortissements_avances(f: IndicateursFEC) -> Signal | None:
+    r = f.ratio_pct(["2813"], ["213"], "C", "D")
+    if r is None or r <= 80:
+        return None
+    return _sig("AMORTISSEMENTS_AVANCES", O, F, "Amortissements avancés",
+                f"Amortissements / valeur brute immeubles = {r:.0f}% (seuil 80%).",
+                "Arbitrage patrimonial, réinvestissement, cession")
+
+
+# --- Composites même-année ---
+def _compte_courant_crediteur_eleve(f: IndicateursFEC) -> Signal | None:
+    v = f.solde(["455"], "C")
+    if v <= 50000:
+        return None
+    grav = E if v > 150000 else (M if v > 100000 else F)
+    return _sig("COMPTE_COURANT_CREDITEUR_ELEVE", O, grav, "Compte courant d'associé créditeur élevé",
+                f"Compte courant d'associé créditeur : {v:,.0f} € (seuil 50 000 €).",
+                "Diagnostic patrimonial, placement, succession & transmission")
+
+
+def _absence_interessement(f: IndicateursFEC) -> Signal | None:
+    if f.mouvement(["6414"]) != 0 or f.solde(["12"], "C") <= 80000:
+        return None
+    return _sig("ABSENCE_INTERESSEMENT", X, F, "Absence d'intéressement",
+                "Aucune prime d'intéressement (6414 = 0) alors que le résultat dépasse 80 000 €.",
+                "Intéressement des salariés, PEE")
+
+
+def _absence_provision_ifc(f: IndicateursFEC) -> Signal | None:
+    if f.mouvement(["153"]) != 0 or f.solde(["641"], "D") <= 100000:
+        return None
+    return _sig("ABSENCE_PROVISION_IFC", R, M, "Absence de provision IFC",
+                "Aucune provision pour indemnités de fin de carrière (153 = 0) avec une masse salariale > 100 000 €.",
+                "Indemnités de fin de carrière (IFC)")
+
+
+def _absence_prevoyance_madelin(f: IndicateursFEC) -> Signal | None:
+    if f.mouvement(["6467"]) != 0 or f.solde(["6411"], "D") <= 36000:
+        return None
+    return _sig("ABSENCE_PREVOYANCE_MADELIN", R, M, "Absence de prévoyance Madelin",
+                "Aucune cotisation prévoyance (6467 = 0) alors que la rémunération dépasse 36 000 €.",
+                "Prévoyance dirigeant (Madelin)")
+
+
+def _sous_remuneration_dirigeant(f: IndicateursFEC) -> Signal | None:
+    if f.solde(["12"], "C") <= 80000 or not (0 < f.solde(["6411"], "D") < 40000):
+        return None
+    return _sig("SOUS_REMUNERATION_DIRIGEANT", X, M, "Sous-rémunération du dirigeant",
+                "Résultat > 80 000 € mais rémunération dirigeant < 40 000 € : arbitrage à étudier.",
+                "Rémunération optimisée du dirigeant, statut social")
+
+
+def _absence_force_commerciale(f: IndicateursFEC) -> Signal | None:
+    if f.mouvement(["6221"]) != 0 or f.ca_n <= 200000:
+        return None
+    return _sig("ABSENCE_FORCE_COMMERCIALE", O, M, "Absence de force commerciale",
+                "Aucune commission commerciale (6221 = 0) avec un CA > 200 000 €.",
+                "Assistanat commercial, développement commercial")
+
+
+def _depenses_pub_sans_effet(f: IndicateursFEC) -> Signal | None:
+    var_ca = f.variation_pct(["70"], "C")
+    if f.solde(["6231"], "D") <= 5000 or var_ca is None or var_ca > 0:
+        return None
+    return _sig("DEPENSES_PUB_SANS_EFFET", R, F, "Dépenses publicitaires sans effet",
+                "Dépenses de publicité > 5 000 € sans progression du CA.",
+                "Assistanat commercial, étude de zone de chalandise")
+
+
+def _immo_locatif_non_amorti(f: IndicateursFEC) -> Signal | None:
+    if f.solde(["213", "214"], "D") <= 0 or f.mouvement(["2813", "2814"]) != 0:
+        return None
+    return _sig("IMMO_LOCATIF_NON_AMORTI", O, M, "Immobilier locatif non amorti",
+                "Biens immobiliers présents (213/214) sans amortissement constaté (2813/2814 = 0).",
+                "Comptabilité LMNP au réel (amortissement)")
+
+
+# --- Variations N/N-1 ---
+def _variation_haus(code, comptes, sens, seuil, typ, grav, titre, levier):
+    def _f(f: IndicateursFEC) -> Signal | None:
+        v = f.variation_pct(comptes, sens)
+        if v is None or v < seuil:
+            return None
+        return _sig(code, typ, grav, titre, f"{titre} : {v:+.0f}% vs N-1 (seuil +{seuil:.0f}%).", levier)
+    return _f
+
+
+_frais_financiers_en_hausse = _variation_haus(
+    "FRAIS_FINANCIERS_EN_HAUSSE", ["661"], "D", 20, R, M,
+    "Frais financiers en hausse", "Prévisionnel de trésorerie, restructuration de dette")
+_frais_bancaires_en_hausse = _variation_haus(
+    "FRAIS_BANCAIRES_EN_HAUSSE", ["627"], "D", 20, X, F,
+    "Frais bancaires en hausse", "Assistanat administratif, renégociation bancaire")
+_hausse_immobilisations = _variation_haus(
+    "HAUSSE_IMMOBILISATIONS", ["21"], "D", 20, C, F,
+    "Hausse des immobilisations", "Multirisque entreprise, garantie emprunteur")
+_honoraires_exceptionnels_en_hausse = _variation_haus(
+    "HONORAIRES_EXCEPTIONNELS_EN_HAUSSE", ["6226"], "D", 50, C, F,
+    "Honoraires exceptionnels en hausse", "Cession & acquisition, accompagnement")
+
+
+def _variation_remuneration_dirigeant(f: IndicateursFEC) -> Signal | None:
+    v = f.variation_pct(["6411"], "D")
+    if v is None or abs(v) < 15:
+        return None
+    return _sig("VARIATION_REMUNERATION_DIRIGEANT", C, F, "Variation de rémunération du dirigeant",
+                f"Rémunération dirigeant : {v:+.0f}% vs N-1 (seuil ±15%).",
+                "Prévoyance dirigeant, conseil RH")
+
+
+def _augmentation_capital(f: IndicateursFEC) -> Signal | None:
+    n1 = f.solde(["101"], "C", n1=True)
+    if not n1 or f.solde(["101"], "C") - n1 <= 0:
+        return None
+    return _sig("AUGMENTATION_CAPITAL", C, F, "Augmentation de capital",
+                "Le capital social (101) a augmenté vs N-1.",
+                "Modification de société, secrétariat juridique")
+
+
+# --- Divers ---
+def _resultat_bnc_eleve(f: IndicateursFEC) -> Signal | None:
+    if f.solde(["12"], "C") <= 100000:
+        return None
+    return _sig("RESULTAT_BNC_ELEVE", X, M, "Résultat élevé (BNC)",
+                f"Résultat de l'exercice : {f.solde(['12'], 'C'):,.0f} € (seuil 100 000 €).",
+                "Structuration des professions libérales (SEL, SPFPL)")
+
+
+_EXPLICIT_DETECTORS = [
+    _charges_sociales_elevees, _ratio_dividendes_eleve, _charges_sociales_perso_elevees,
+    _amortissements_avances, _compte_courant_crediteur_eleve, _absence_interessement,
+    _absence_provision_ifc, _absence_prevoyance_madelin, _sous_remuneration_dirigeant,
+    _absence_force_commerciale, _depenses_pub_sans_effet, _immo_locatif_non_amorti,
+    _frais_financiers_en_hausse, _frais_bancaires_en_hausse, _hausse_immobilisations,
+    _honoraires_exceptionnels_en_hausse, _variation_remuneration_dirigeant,
+    _augmentation_capital, _resultat_bnc_eleve,
+]
+
+
 def detect_signals_from_fec(feat: IndicateursFEC, seuils_overrides: dict[str, float] | None = None) -> list[Signal]:
     overrides = seuils_overrides or {}
     signals: list[Signal] = []
@@ -127,5 +298,8 @@ def detect_signals_from_fec(feat: IndicateursFEC, seuils_overrides: dict[str, fl
         sig = _eval_generic(code, feat, overrides)
         if sig is not None:
             signals.append(sig)
-    # (détecteurs explicites ajoutés en Task 3)
+    for detector in _EXPLICIT_DETECTORS:
+        sig = detector(feat)
+        if sig is not None:
+            signals.append(sig)
     return signals
