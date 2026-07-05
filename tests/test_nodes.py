@@ -222,3 +222,18 @@ class TestMatchMissionsNode:
         from nodes.match_missions import match_missions
         with pytest.raises(ValueError, match="outside the allowed"):
             match_missions({"signaux_detectes": [], "catalogue_path": "../../../etc/passwd"})
+
+    def test_priority1_never_outranked_by_priority2(self):
+        """Une priorité-1 n'est jamais surclassée par une priorité-2 très déclenchée."""
+        from nodes.match_missions import match_missions
+        codes = ["LIQUIDITE_CRITIQUE", "DELAI_CLIENTS_ELEVE", "DECOUVERT_RECURRENT",
+                 "DESEQUILIBRE_BFR", "SAISONNALITE_FORTE", "FRAIS_FINANCIERS_EN_HAUSSE",
+                 "ENDETTEMENT_EXCESSIF", "PRESENCE_SALARIES"]
+        result = match_missions({"signaux_detectes": [self._signal(c) for c in codes]})
+        recos = result["missions_recommandees"]
+        seen_p2 = False
+        for r in recos:
+            if r.mission.priorite_proposition >= 2:
+                seen_p2 = True
+            elif r.mission.priorite_proposition == 1:
+                assert not seen_p2, f"P1 {r.mission.id} classée après une P2"

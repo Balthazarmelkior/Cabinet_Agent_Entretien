@@ -1,5 +1,6 @@
 # nodes/match_missions.py
 import os
+from functools import lru_cache
 from pathlib import Path
 from models import Mission, MissionRecommandee
 from matching.mission_matcher import MissionMatcher, Mission as MissionDC
@@ -15,6 +16,11 @@ def _resolve(path: str) -> Path:
     return resolved
 
 
+@lru_cache(maxsize=8)
+def _get_matcher(catalogue: str, seuils: str) -> MissionMatcher:
+    return MissionMatcher.from_files(catalogue, seuils)
+
+
 def _to_model(m: MissionDC) -> Mission:
     return Mission(
         id=m.id, titre=m.titre, description=m.description,
@@ -24,42 +30,41 @@ def _to_model(m: MissionDC) -> Mission:
     )
 
 
+def _make_reco(m: MissionDC, score: float, declencheurs: list[str]) -> MissionRecommandee:
+    mission = _to_model(m)
+    return MissionRecommandee(
+        mission=mission,
+        score_pertinence=score,
+        signaux_declencheurs=declencheurs,
+        argumentaire=mission.benefice_client,
+        urgence=_URGENCE.get(m.priorite_proposition, "moyen terme"),
+    )
+
+
 def match_missions(state: dict) -> dict:
     signaux = state.get("signaux_detectes", []) or []
     codes_actifs = [s.code for s in signaux]
 
-    catalogue_path = _resolve(state.get("catalogue_path", "data/catalogue_missions_tyls.json"))
+    catalogue_path = _resolve(state.get("catalogue_path", os.getenv("CATALOGUE_PATH", "data/catalogue_missions_tyls.json")))
     seuils_path = _resolve(state.get("seuils_path", os.getenv("SEUILS_PATH", "data/seuils_signaux.json")))
 
-    matcher = MissionMatcher.from_files(catalogue_path, seuils_path)
+    matcher = _get_matcher(str(catalogue_path), str(seuils_path))
     matches = matcher.match(codes_actifs)
 
     recommandations: list[MissionRecommandee] = []
     ids_retenus: set[str] = set()
 
     for m in matches:
-        mission = _to_model(m.mission)
-        ids_retenus.add(mission.id)
-        score = 1.0 if mission.priorite_proposition == 1 else min(1.0, round(0.5 + 0.1 * m.score, 2))
-        recommandations.append(MissionRecommandee(
-            mission=mission,
-            score_pertinence=score,
-            signaux_declencheurs=[s.code for s in m.signaux_declencheurs],
-            argumentaire=mission.benefice_client,
-            urgence=_URGENCE.get(mission.priorite_proposition, "moyen terme"),
-        ))
+        ids_retenus.add(m.mission.id)
+        score = 1.0 if m.mission.priorite_proposition == 1 else min(1.0, round(0.5 + 0.1 * m.score, 2))
+        recommandations.append(
+            _make_reco(m.mission, score, [s.code for s in m.signaux_declencheurs])
+        )
 
     # Toujours inclure les missions priorité 1, même sans signal déclencheur
     for m in matcher.missions:
         if m.priorite_proposition == 1 and m.id not in ids_retenus:
-            mission = _to_model(m)
-            recommandations.append(MissionRecommandee(
-                mission=mission,
-                score_pertinence=1.0,
-                signaux_declencheurs=[],
-                argumentaire=mission.benefice_client,
-                urgence="immédiate",
-            ))
+            recommandations.append(_make_reco(m, 1.0, []))
 
-    recommandations.sort(key=lambda r: r.score_pertinence, reverse=True)
+    recommandations.sort(key=lambda r: (-r.score_pertinence, r.mission.priorite_proposition))
     return {"missions_recommandees": recommandations}
