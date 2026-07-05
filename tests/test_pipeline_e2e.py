@@ -229,6 +229,34 @@ def test_end_to_end_all_nodes_sequential(catalogue_path):
         os.unlink(tmp)
 
 
+def test_fec_signals_drive_missions(catalogue_path, donnees_saine):
+    """Un FEC synthétique famille A (rémunération, 455 créditeur, pénalités) produit
+    des signaux FEC qui déclenchent les missions catalogue correspondantes."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    df = pd.DataFrame([
+        {"CompteNum": "641100", "Debit": 60000, "Credit": 0, "EcritureDate": "20240131"},
+        {"CompteNum": "4551",   "Debit": 0, "Credit": 90000, "EcritureDate": "20240131"},
+        {"CompteNum": "671200", "Debit": 800, "Credit": 0, "EcritureDate": "20240201"},
+    ])
+    feat = compute_fec_features(df)
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    codes = {sig.code for sig in s["signaux_detectes"]}
+    assert {"REMUNERATION_DIRIGEANT_ELEVEE", "COMPTE_COURANT_CREDITEUR_ELEVE", "PENALITES_FISCALES"} <= codes
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_PROTECTION_STATUT_SOCIAL" in ids           # rémunération dirigeant
+    assert "MISSION_COMPTA_PACK_SERENITE" in ids               # pénalités fiscales
+
+
 # ── Tests de robustesse ────────────────────────────────────────────────────────
 
 def test_unsupported_file_format_raises_value_error():
