@@ -1,0 +1,713 @@
+[
+  {
+    "id": "MISSION_COMPTA_EXPERTISE",
+    "titre": "Expertise comptable",
+    "description": "Tenue et révision comptable, déclarations fiscales et sociales, prévisionnel, tableaux de bord, montage de dossiers de financement et conseil en gestion.",
+    "benefice_client": "Conformité garantie, fiscalité optimisée et pilotage facilité avec un partenaire de chaque décision",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Sur devis",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_COMPTA_SECTEUR_PUBLIC",
+    "titre": "Comptabilité secteur public",
+    "description": "Tenue et bilan comptable des structures publiques et parapubliques, gestion des subventions et dons, conformité réglementaire spécifique.",
+    "benefice_client": "Obligations du secteur public respectées avec une gestion transparente et un interlocuteur spécialisé",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Sur devis",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_COMPTA_PACK_SERENITE",
+    "titre": "Pack Sérénité (ECF + Zen Fiscal + Zen Social)",
+    "description": "Protection complète face aux contrôles : examen de conformité fiscale annuel, assurance couvrant les honoraires exceptionnels en cas de contrôle fiscal et de contrôle URSSAF/MSA, avec remises croisées.",
+    "benefice_client": "Risque de contrôle réduit, zéro surcoût en cas de contrôle et absence de pénalités sur les points contrôlés",
+    "codes_signaux": ["PENALITES_FISCALES"],
+    "honoraires_indicatifs": "236-620 €/an selon segment (grille BNC/SCI/BIC/BA)",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_COMPTA_ECF",
+    "titre": "Examen de Conformité Fiscale (ECF)",
+    "description": "Contrôle annuel sur 10 points légaux (conformité FEC, TVA, amortissements, provisions...) avec transmission du compte-rendu de mission à la DGFIP.",
+    "benefice_client": "Classement en entreprise de confiance par la DGFIP, risque de contrôle fiscal réduit et absence de pénalités en cas de redressement sur un point validé",
+    "codes_signaux": ["PENALITES_FISCALES"],
+    "honoraires_indicatifs": "200-490 €/an selon chiffre d'affaires",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_COMPTA_FX_FORMATION",
+    "titre": "Formation facture électronique",
+    "description": "Formation certifiée Qualiopi (3h) sur la réforme de la facturation électronique : obligations légales, acteurs (PA, PPF, OD), impacts sur les processus achats/ventes, cas pratiques.",
+    "benefice_client": "Équipes autonomes sur la réforme et actions prioritaires identifiées avant l'entrée en vigueur, formation finançable par l'OPCO",
+    "codes_signaux": ["VOLUME_FACTURATION_ELEVE"],
+    "honoraires_indicatifs": "À partir de 350 € HT (finançable OPCO)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_COMPTA_FX_MISE_EN_PLACE",
+    "titre": "Mise en place facture électronique",
+    "description": "Diagnostic des flux, audit qualité des données tiers (SIREN, TVA intracommunautaire), structuration des circuits de validation, tests de conformité et accompagnement au démarrage.",
+    "benefice_client": "Conformité légale assurée dans les délais, données tiers fiabilisées et transition sans rupture d'activité",
+    "codes_signaux": ["VOLUME_FACTURATION_ELEVE", "NOMBREUX_FOURNISSEURS", "NON_EQUIPE_FACTURE_ELECTRONIQUE", "ACOMPTES_FREQUENTS"],
+    "honoraires_indicatifs": "À partir de 350 € HT",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_COMPTA_FX_EXTERNALISATION",
+    "titre": "Externalisation de la facturation électronique",
+    "description": "Prise en charge complète des flux de facturation : émission, intégration des factures fournisseurs, suivi des statuts, rapprochements, relances et reporting mensuel.",
+    "benefice_client": "Zéro charge opérationnelle sur la facturation, trésorerie suivie en temps réel et gain de 1 à 3 jours par mois",
+    "codes_signaux": ["VOLUME_FACTURATION_ELEVE", "DELAI_FACTURATION_LONG"],
+    "honoraires_indicatifs": "50 € HT/heure",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_CONNECT_PROF_LIBERALES",
+    "titre": "Comptabilité professions libérales réglementées",
+    "description": "Tenue comptable avec récupération automatique des relevés, déclarations 2035 et annexes, télétransmission impôts et AGA pour les professions libérales médicales.",
+    "benefice_client": "Gain de temps, conformité assurée et coût maîtrisé pour se concentrer sur les patients",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 41 € HT/mois",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_CONNECT_FREELANCES",
+    "titre": "Comptabilité freelances",
+    "description": "Comptes annuels attestés, liasse fiscale et TVA, logiciel de comptabilité avec simulateurs et facturation mobile pour indépendants.",
+    "benefice_client": "Focus sur le cœur de métier avec un interlocuteur dédié et des coûts réduits",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 49 € HT/mois",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_CONNECT_ASSOCIATIONS",
+    "titre": "Comptabilité associations",
+    "description": "Tenue et bilan comptable, conseil expert dédié, présentation des comptes et aide aux dossiers de subvention.",
+    "benefice_client": "Conformité réglementaire, gestion financière transparente et obtention de subventions facilitée",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 45 € HT/mois",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AUDIT_CAC",
+    "titre": "Commissariat aux comptes",
+    "description": "Certification des comptes annuels, contrôle de régularité et sincérité, détection des risques, commissariat aux apports/fusion et audit d'acquisition.",
+    "benefice_client": "Crédibilité renforcée auprès des partenaires, procédures améliorées, sécurité et alerte avant les difficultés",
+    "codes_signaux": ["DEPASSEMENT_SEUILS_CAC"],
+    "honoraires_indicatifs": "Sur devis",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_IMMO_CONSEIL_INVESTISSEMENT",
+    "titre": "Conseil en investissement immobilier",
+    "description": "Analyse de la situation personnelle, conseil sur le régime fiscal (LMNP, micro-BIC, location nue) et le mode de détention (nom propre vs SCI), stratégie patrimoniale immobilière.",
+    "benefice_client": "Fiscalité optimisée dès le départ et vision claire avant tout investissement locatif",
+    "codes_signaux": ["TRESORERIE_EXCEDENTAIRE", "COMPTE_COURANT_CREDITEUR_ELEVE", "CESSION_ACTIFS_RECENTE", "FORTE_RENTABILITE"],
+    "honoraires_indicatifs": "140 € HT/h (diagnostic 20 min offert)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_IMMO_LMNP",
+    "titre": "Comptabilité LMNP",
+    "description": "Suivi comptable annuel LMNP, choix du régime (micro-BIC ou réel), amortissement des biens et déclarations fiscales.",
+    "benefice_client": "Impôt sur les loyers réduit voire annulé grâce à l'amortissement au réel, rentabilité maximisée",
+    "codes_signaux": ["REVENUS_LOCATIFS_ELEVES", "IMMO_LOCATIF_DETECTE", "IMMO_LOCATIF_NON_AMORTI"],
+    "honoraires_indicatifs": "À partir de 375 € HT + 125 €/bien supplémentaire",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_IMMO_SCI",
+    "titre": "Gestion de SCI",
+    "description": "Création et gestion complète de SCI, choix du régime fiscal (IR/IS), structuration, transmission et gestion comptable annuelle.",
+    "benefice_client": "Fiscalité adaptée, transmission facilitée et patrimoine protégé",
+    "codes_signaux": ["MULTI_BIENS_IMMOBILIERS", "REVENUS_LOCATIFS_ELEVES", "COMPTE_COURANT_CREDITEUR_ELEVE", "PATRIMOINE_IMMO_IMPORTANT"],
+    "honoraires_indicatifs": "500 € HT (IS) / 420 € HT (IR)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_IMMO_PORTEFEUILLE",
+    "titre": "Gestion de portefeuille investisseurs",
+    "description": "Gestion sur mesure des gros patrimoines immobiliers multi-biens : optimisation fiscale avancée, diversification et planification de la transmission.",
+    "benefice_client": "Rentabilité maximisée, anticipation réglementaire et transmission structurée",
+    "codes_signaux": ["CA_LOCATIF_CONSOLIDE_ELEVE", "PATRIMOINE_IMMO_IMPORTANT", "AMORTISSEMENTS_AVANCES", "EMPRUNTS_MULTIPLES"],
+    "honoraires_indicatifs": "Sur devis",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_PATRIMOINE_DIAGNOSTIC_360",
+    "titre": "Diagnostic patrimonial 360°",
+    "description": "Analyse complète du patrimoine : actifs, passifs, fiscalité, régime matrimonial, droits de succession, dispositifs civils et fiscaux, plan d'action personnalisé.",
+    "benefice_client": "Vision claire du patrimoine, fiscalité successorale anticipée et plan actionnable (jusqu'à 45 % de droits de succession évitables)",
+    "codes_signaux": ["COMPTE_COURANT_CREDITEUR_ELEVE", "PORTEFEUILLE_FINANCIER_IMPORTANT", "RESULTAT_NET_ELEVE_RECURRENT"],
+    "honoraires_indicatifs": "À partir de 2 000 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PATRIMOINE_PLACEMENTS",
+    "titre": "Placements financiers sur mesure",
+    "description": "Stratégie de placement personnalisée : assurance-vie, PER, contrats de capitalisation, CTO, PEA, Private Equity, SCPI, avec arbitrage et rééquilibrage annuel.",
+    "benefice_client": "Rendement net optimisé après impôts, risques maîtrisés et stratégie alignée sur les objectifs",
+    "codes_signaux": ["TRESORERIE_EXCEDENTAIRE", "COMPTE_COURANT_CREDITEUR_ELEVE", "CESSION_ACTIFS_RECENTE"],
+    "honoraires_indicatifs": "Rétrocommissions assureur + droit d'entrée 1,5-2,5 %",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PATRIMOINE_TRESORERIE",
+    "titre": "Placement de trésorerie d'entreprise",
+    "description": "Analyse de la trésorerie excédentaire vs besoins, placement en contrats de capitalisation, SCPI ou Private Equity, avec suivi et arbitrage.",
+    "benefice_client": "Trésorerie qui génère du rendement au lieu de dormir (100 K€ à 0 % = 3 à 5 K€ perdus/an), fiscalité optimisée et liquidité préservée",
+    "codes_signaux": ["TRESORERIE_EXCEDENTAIRE", "HAUSSE_TRESORERIE", "COMPTE_COURANT_CREDITEUR_ELEVE"],
+    "honoraires_indicatifs": "Rétrocommissions assureur + droit d'entrée 1,5-2,5 %",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PATRIMOINE_IMMO_PRO",
+    "titre": "Structuration immobilier professionnel",
+    "description": "Audit du mode de détention des murs professionnels (direct, SCI, holding), impact fiscal et patrimonial, optimisation de la structure juridique et préparation de la transmission.",
+    "benefice_client": "Réduction significative de l'impôt, transmission facilitée et contrôle préservé",
+    "codes_signaux": ["IMMO_PRO_ELEVEE", "LOYERS_VERSES_ELEVES"],
+    "honoraires_indicatifs": "À partir de 3 500 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PATRIMOINE_SUCCESSION",
+    "titre": "Succession & transmission",
+    "description": "Restructuration patrimoniale (holding, pacte Dutreil), anticipation de la cession 5 ans avant, étude de faisabilité bancaire et optimisation successorale.",
+    "benefice_client": "Jusqu'à 75 % d'exonération avec le pacte Dutreil, valorisation optimisée et transition sereine",
+    "codes_signaux": ["COMPTE_COURANT_CREDITEUR_ELEVE", "CAPITAUX_PROPRES_ELEVES_SANS_HOLDING", "DIVIDENDES_RECURRENTS", "OPTIMISATION_FISCALE"],
+    "honoraires_indicatifs": "À partir de 3 000 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_STATUT_SOCIAL",
+    "titre": "Optimisation du statut social du dirigeant",
+    "description": "Étude personnalisée du statut optimal (TNS/assimilé salarié), simulation salaire/dividendes/mixte, comparaison des protections sociales et mise en place opérationnelle.",
+    "benefice_client": "Jusqu'à 30 % d'économies de charges, protection ajustée et rémunération nette maximisée",
+    "codes_signaux": ["REMUNERATION_DIRIGEANT_ELEVEE", "VARIATION_REMUNERATION_DIRIGEANT"],
+    "honoraires_indicatifs": "À partir de 500 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_REMUNERATION",
+    "titre": "Rémunération optimisée du dirigeant",
+    "description": "Analyse du ratio dividendes/salaire, simulation de l'impact réel après impôts et coordination avec l'expert-comptable.",
+    "benefice_client": "Revenus nets maximisés avec une couverture sociale cohérente et une stratégie pérenne",
+    "codes_signaux": ["RATIO_DIVIDENDES_ELEVE", "REMUNERATION_DIRIGEANT_ELEVEE", "SOUS_REMUNERATION_DIRIGEANT"],
+    "honoraires_indicatifs": "Inclus dans l'étude statut",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_PREVOYANCE_DIRIGEANT",
+    "titre": "Prévoyance dirigeant",
+    "description": "Diagnostic de protection, prévoyance Madelin (indemnités journalières, invalidité, décès), garantie homme-clé et garanties croisées, optimisation du volet emprunteur.",
+    "benefice_client": "Revenus maintenus en cas d'accident ou de maladie, famille et entreprise protégées, crédits sécurisés",
+    "codes_signaux": ["ABSENCE_PREVOYANCE_MADELIN", "VARIATION_REMUNERATION_DIRIGEANT"],
+    "honoraires_indicatifs": "À partir de 750 € HT (ou offert si nouveaux contrats)",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_PROTECTION_PREVOYANCE_SALARIES",
+    "titre": "Prévoyance des salariés",
+    "description": "Audit de la masse salariale et des obligations conventionnelles (CCN), préconisations de garanties et d'assureurs, mise en place du contrat et valorisation auprès des équipes.",
+    "benefice_client": "Conformité CCN assurée, trésorerie protégée en cas d'arrêt long d'un salarié et package de rémunération valorisé",
+    "codes_signaux": ["PRESENCE_SALARIES"],
+    "honoraires_indicatifs": "Rétrocommissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_GARANTIE_EMPRUNTEUR",
+    "titre": "Garantie emprunteur",
+    "description": "Étude des paramètres du financement, recommandation en accord avec les exigences bancaires, devis optimisés et dialogue avec la banque pour sécuriser les délais.",
+    "benefice_client": "Économies de 20 à 50 % sur l'assurance de prêt, financement sécurisé et négociation gagnant-gagnant avec la banque",
+    "codes_signaux": ["NOUVEL_EMPRUNT", "INVESTISSEMENT_RECENT"],
+    "honoraires_indicatifs": "Rétrocommissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_MUTUELLE",
+    "titre": "Mutuelle santé (dirigeant et collective)",
+    "description": "Couverture TNS sur mesure, mutuelle collective obligatoire selon CCN, comparaison multi-assureurs et suivi annuel.",
+    "benefice_client": "Frais de santé couverts, conformité légale vis-à-vis de la CCN et tarifs négociés",
+    "codes_signaux": ["PRESENCE_SALARIES"],
+    "honoraires_indicatifs": "Rétrocommissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_RETRAITE",
+    "titre": "Retraite du dirigeant",
+    "description": "Bilan retraite complet, mise en place de PER avec avantages fiscaux, assurance-vie retraite et solutions immobilières (SCPI, LMNP).",
+    "benefice_client": "Vision claire de la pension, revenus complémentaires générés et impôt sur le revenu réduit dès cette année",
+    "codes_signaux": ["ABSENCE_PER_RETRAITE", "OPTIMISATION_FISCALE"],
+    "honoraires_indicatifs": "À partir de 750 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_GARANTIE_CHOMAGE",
+    "titre": "Garantie chômage du dirigeant",
+    "description": "Analyse de la situation personnelle du dirigeant et sélection d'un produit d'assurance perte d'activité adapté (durée et montant d'indemnisation).",
+    "benefice_client": "Revenu de remplacement garanti en cas de perte d'activité involontaire, sécurité financière pour rebondir",
+    "codes_signaux": ["EBE_NEGATIF", "BAISSE_CA_SIGNIFICATIVE"],
+    "honoraires_indicatifs": "Rétrocommissions assureur (offre créateur dès 35 €/mois)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_PEE",
+    "titre": "Plan d'épargne salariale (PEE)",
+    "description": "Mise en place d'un PEE avec choix des acteurs, accompagnement et présentation aux salariés, optimisation fiscale pour le dirigeant avec conjoint collaborateur salarié.",
+    "benefice_client": "Salariés fidélisés par la redistribution du résultat, conformité légale et forte optimisation fiscale épargne + retraite",
+    "codes_signaux": ["ABSENCE_INTERESSEMENT", "FORTE_RENTABILITE", "PRESENCE_SALARIES"],
+    "honoraires_indicatifs": "Rétrocommissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_IFC",
+    "titre": "Indemnités de fin de carrière (IFC)",
+    "description": "Détermination du passif social et des provisions IFC à constituer, valorisation du passif social, choix des partenaires assureurs pour la gestion des fonds placés.",
+    "benefice_client": "Coûts de sortie des salariés fidèles lissés et provisionnés, bilan protégé et société mieux valorisée en cas de vente",
+    "codes_signaux": ["ABSENCE_PROVISION_IFC", "PRESENCE_SALARIES", "LIQUIDITE_CRITIQUE"],
+    "honoraires_indicatifs": "Audit 200-500 € HT selon taille",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_RC_PRO",
+    "titre": "Responsabilité civile professionnelle",
+    "description": "Audit des risques, mise en concurrence des assureurs, contrat adapté au secteur et au chiffre d'affaires, suivi et gestion des sinistres.",
+    "benefice_client": "Responsabilité couverte face aux dommages causés aux tiers, couverture ajustée au CA et tarifs optimisés",
+    "codes_signaux": ["ABSENCE_ASSURANCE_RC", "FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_PROTECTION_RC_DECENNALE",
+    "titre": "Responsabilité civile décennale",
+    "description": "Audit des risques construction, mise en concurrence des assureurs et contrat décennale adapté au métier et au chiffre d'affaires (gros œuvre, second œuvre, bureaux d'étude, architectes).",
+    "benefice_client": "Responsabilité décennale couverte, dommages sur chantier avant réception couverts et tarifs compétitifs",
+    "codes_signaux": ["ABSENCE_ASSURANCE_RC", "FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_RC_DIRIGEANTS",
+    "titre": "RC des dirigeants et mandataires sociaux",
+    "description": "Analyse de l'entreprise et du rôle du dirigeant, mise en concurrence d'assureurs spécialisés, prise en charge des frais de défense et des préjudices en cas de mise en cause.",
+    "benefice_client": "Patrimoine personnel du dirigeant et des associés protégé en cas de mise en cause professionnelle",
+    "codes_signaux": ["ABSENCE_ASSURANCE_RC"],
+    "honoraires_indicatifs": "Commissions assureur (primes dès 300 €/an)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_MULTIRISQUE",
+    "titre": "Multirisque entreprise",
+    "description": "Audit des biens, couverture complète (bâtiment, stock, machines, perte d'exploitation, risques locatifs, catastrophes naturelles) en un seul contrat avec suivi annuel de l'activité.",
+    "benefice_client": "Activité maintenue même après un sinistre majeur, indemnisation rapide et interlocuteur unique",
+    "codes_signaux": ["ACTIFS_A_ASSURER", "HAUSSE_IMMOBILISATIONS"],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_FLOTTE_AUTO",
+    "titre": "Flotte automobile",
+    "description": "Audit du parc auto, contrat flotte unique avec gestion centralisée et suivi de la sinistralité pour les entreprises de 5 véhicules et plus.",
+    "benefice_client": "Coûts réduits, un seul contrat et un seul interlocuteur, ajout/retrait de véhicules sans contrainte",
+    "codes_signaux": ["PARC_VEHICULES_IMPORTANT"],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_CYBER",
+    "titre": "Assurance cyber risque",
+    "description": "Diagnostic de l'exposition cyber, contrat couvrant perte d'exploitation, RGPD, restauration des données et responsabilité civile, hotline 24/24.",
+    "benefice_client": "Protection financière face aux cyberattaques (coût moyen PME : 50 000 €) et gestion de crise prise en charge",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Commissions assureur + honoraires (dès 500 €/an)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_COPROPRIETES",
+    "titre": "Assurance copropriétés",
+    "description": "Audit du contrat existant, mise en concurrence, négociation sur mesure et accompagnement sinistres pour syndics et investisseurs en copropriété.",
+    "benefice_client": "Primes réduites, garanties ajustées et interlocuteur dédié",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_PROTECTION_PNO",
+    "titre": "Assurance propriétaire non occupant (PNO)",
+    "description": "Audit du patrimoine immobilier locatif, contrats PNO par bien et gestion multi-biens pour bailleurs, LMNP et SCI.",
+    "benefice_client": "Conformité légale (PNO obligatoire en copropriété), protection contre les recours des locataires et couverture sans trou de garantie",
+    "codes_signaux": ["IMMO_LOCATIF_DETECTE", "REVENUS_LOCATIFS_ELEVES"],
+    "honoraires_indicatifs": "Dès 90 €/an/bien + frais de dossier",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_SINISTRES",
+    "titre": "Accompagnement sinistres",
+    "description": "Déclaration dans les délais, constitution du dossier, interface avec l'expert et négociation de l'indemnisation face à l'assureur.",
+    "benefice_client": "Délégation intégrale de la gestion du sinistre, indemnisation optimisée et stress réduit",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Inclus dans les contrats TYLS, sinon dès 150 € HT/dossier",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_PROTECTION_DOMMAGE_OUVRAGE",
+    "titre": "Assurance dommage ouvrage",
+    "description": "Analyse du dossier de construction ou d'extension, mise en concurrence avec des partenaires spécialisés et accompagnement sinistres pendant 10 ans après livraison.",
+    "benefice_client": "Malfaçons couvertes 10 ans avec avance des travaux par l'assureur, revente avant 10 ans facilitée",
+    "codes_signaux": ["CONSTRUCTION_EN_COURS"],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_BRIS_MACHINE",
+    "titre": "Assurance bris de machine",
+    "description": "Analyse du parc machines et des conséquences d'un bris, contrat tous risques couvrant erreur humaine, panne et perte d'exploitation, dans et hors des locaux.",
+    "benefice_client": "Réparation ou remplacement des matériels chers couverts, activité maintenue et indemnisation possible en valeur à neuf",
+    "codes_signaux": ["PARC_MACHINES_IMPORTANT"],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_PHOTOVOLTAIQUE",
+    "titre": "Assurance installations photovoltaïques",
+    "description": "Analyse de l'installation et des relations avec les tiers, mise en concurrence, contrat tous risques couvrant l'installation, la perte de revenus et les dommages aux tiers.",
+    "benefice_client": "Investissement photovoltaïque et revenus de production garantis, responsabilité couverte",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_PROTECTION_MARCHANDISES",
+    "titre": "Assurance marchandises transportées",
+    "description": "Analyse des biens transportés (fréquence, valeur, poids), mise en concurrence et contrat tous risques indemnisant la valeur réelle au-delà de la faible indemnité du transporteur.",
+    "benefice_client": "Indemnisation rapide et totale des marchandises perdues, gestion du sinistre par l'assureur y compris avec le transporteur",
+    "codes_signaux": ["FRAIS_TRANSPORT_ELEVES"],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PROTECTION_AUTRES_RISQUES",
+    "titre": "Autres risques spécifiques",
+    "description": "Couverture des risques spécifiques : RC organisateur, tous risques chantier/montage-essai, individuelle accident, protection juridique, RC associations, événements culturels, œuvres d'art.",
+    "benefice_client": "Couverture sans angle mort de tous les risques métier, tranquillité d'esprit",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_PROTECTION_ENR",
+    "titre": "Assurance EnR & environnement",
+    "description": "Audit du projet d'énergies renouvelables, couverture TRC, bris de machine, perte de production, garantie de performance et RC environnementale.",
+    "benefice_client": "Investissement vert protégé sur 20-25 ans, conformité aux exigences bancaires et rendement garanti",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Commissions assureur",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_RH_PAIE",
+    "titre": "Paie & déclarations",
+    "description": "Établissement des bulletins avec coffre-fort numérique, DSN et prélèvement à la source automatisés, accompagnement URSSAF/MSA.",
+    "benefice_client": "Bulletins justes et à temps, conformité garantie et charge mentale supprimée",
+    "codes_signaux": ["PRESENCE_SALARIES"],
+    "honoraires_indicatifs": "34,50 € HT/bulletin",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_RH_CONSEIL",
+    "titre": "Conseil RH au quotidien",
+    "description": "Conseil en temps de travail et discipline, rédaction de contrats et avenants, relais auprès des organismes sociaux, réponse sous 24h.",
+    "benefice_client": "Décisions RH sécurisées, temps économisé et relations sociales apaisées",
+    "codes_signaux": ["VARIATION_REMUNERATION_DIRIGEANT", "PRESENCE_SALARIES"],
+    "honoraires_indicatifs": "105 € HT/contrat, 50 € HT/avenant",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_RH_SIRH",
+    "titre": "SIRH & relations sociales",
+    "description": "Portail SIRH accessible 24/24, digitalisation des processus RH, décryptage de la convention collective et formation du dirigeant.",
+    "benefice_client": "Marque employeur valorisée, procédures fluides et montée en compétences RH",
+    "codes_signaux": ["HONORAIRES_JURIDIQUES_ELEVES", "PRESENCE_SALARIES"],
+    "honoraires_indicatifs": "SIRH inclus, compléments sur devis",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_RH_SECURISATION_JURIDIQUE",
+    "titre": "Sécurisation juridique RH",
+    "description": "Procédures disciplinaires, actes juridiques en droit social, conseil contentieux, rédaction de règlements intérieurs et chartes.",
+    "benefice_client": "Décisions sécurisées, risques prud'homaux réduits et procédures conformes",
+    "codes_signaux": ["PENALITES_SOCIALES", "FRAIS_CONTENTIEUX_ELEVES", "PROVISION_RISQUE_SOCIAL"],
+    "honoraires_indicatifs": "À partir de 131 € HT/h",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_RH_LOGICIEL_PAIE",
+    "titre": "Logiciel de paie autonome",
+    "description": "Location du logiciel SILAE avec assistance technique et mises à jour réglementaires automatiques pour les entreprises gérant la paie en interne.",
+    "benefice_client": "Autonomie et fiabilité, conformité assurée et coûts maîtrisés",
+    "codes_signaux": ["PRESENCE_SALARIES"],
+    "honoraires_indicatifs": "À partir de 7 € HT/mois/bulletin",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_RH_INTERESSEMENT",
+    "titre": "Intéressement des salariés",
+    "description": "Rédaction du contrat d'intéressement avec critères objectifs, calcul annuel et suivi du dispositif.",
+    "benefice_client": "Salariés motivés et fidélisés, exonération de charges patronales et attractivité renforcée",
+    "codes_signaux": ["ABSENCE_INTERESSEMENT", "RESULTAT_EN_CROISSANCE", "CHARGES_SOCIALES_ELEVEES", "MASSE_SALARIALE_ELEVEE"],
+    "honoraires_indicatifs": "Sur devis",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AVOCATS_CREATION",
+    "titre": "Création de société",
+    "description": "Conseil sur la structure optimale, rédaction des statuts et actes annexes, dépôt et gestion des formalités légales avec signature électronique.",
+    "benefice_client": "Lancement rapide, choix stratégique optimisé et prise en charge de A à Z",
+    "codes_signaux": ["SEUIL_TVA_MICRO_DEPASSE"],
+    "honoraires_indicatifs": "À partir de 980 € HT + frais (greffe, JAL, INPI)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AVOCATS_MODIFICATION",
+    "titre": "Modification de société",
+    "description": "Audit et conseil personnalisé, rédaction des actes de modification (capital, siège, objet, forme), formalités administratives digitalisées.",
+    "benefice_client": "Structure juridique adaptée à l'évolution de l'activité, conformité assurée et démarches simplifiées",
+    "codes_signaux": ["AUGMENTATION_CAPITAL", "NOUVEL_ASSOCIE", "NOUVELLES_ACTIVITES", "FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "À partir de 450 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AVOCATS_CESSION_ACQUISITION",
+    "titre": "Cession & acquisition (juridique)",
+    "description": "Audit des risques juridiques et financiers, structuration de l'opération, assistance à la négociation et rédaction des actes (protocole, garantie d'actif et de passif).",
+    "benefice_client": "Transaction sécurisée de A à Z avec un conseil juridique indépendant protégeant les intérêts",
+    "codes_signaux": ["CESSION_ACTIFS_RECENTE", "TITRES_PARTICIPATION_DETECTES", "HONORAIRES_EXCEPTIONNELS_EN_HAUSSE"],
+    "honoraires_indicatifs": "Sur devis (base 2 500 € HT)",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_AVOCATS_RESTRUCTURATION",
+    "titre": "Restructuration & transmission (juridique)",
+    "description": "Audit et accompagnement stratégique, montages juridiques (holding, pacte Dutreil, donation), transmission progressive ou immédiate et sécurisation des actifs.",
+    "benefice_client": "Continuité et stabilité de l'entreprise, fiscalité de transmission optimisée et plan structuré",
+    "codes_signaux": ["CAPITAUX_PROPRES_ELEVES_SANS_HOLDING", "DIVIDENDES_RECURRENTS", "RESULTAT_NET_ELEVE_RECURRENT", "OPTIMISATION_FISCALE"],
+    "honoraires_indicatifs": "Sur devis (180 € HT/h)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_AVOCATS_PROF_LIBERALES",
+    "titre": "Structuration des professions libérales",
+    "description": "Conseil en structure d'exercice (SEL, SPFPL), cession ou apport de fonds libéral, pactes d'associés et cession d'officine.",
+    "benefice_client": "Structure adaptée, optimisation fiscale et sociale de l'exercice libéral et accompagnement dédié officine",
+    "codes_signaux": ["RESULTAT_BNC_ELEVE", "CHARGES_SOCIALES_PERSO_ELEVEES"],
+    "honoraires_indicatifs": "Sur devis",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_TRANSACTIONS_CROISSANCE_EXTERNE",
+    "titre": "Croissance externe",
+    "description": "Stratégie de croissance externe, recherche et mise en relation avec des cibles, due diligence complète et suivi post-acquisition.",
+    "benefice_client": "Accès rapide à de nouveaux marchés, synergies et économies d'échelle avec une opération sécurisée",
+    "codes_signaux": ["CAPACITE_INVESTISSEMENT", "TRESORERIE_EXCEDENTAIRE", "TITRES_PARTICIPATION_DETECTES"],
+    "honoraires_indicatifs": "Commission 2,5-7 % (au succès uniquement)",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_TRANSACTIONS_CESSION_ACQUISITION",
+    "titre": "Cession & acquisition d'entreprise",
+    "description": "Accompagnement à l'achat ou à la vente, mise en relation qualifiée, due diligence approfondie et structuration financière de l'opération.",
+    "benefice_client": "Valorisation maximisée à la vente, juste prix à l'achat et transaction sécurisée",
+    "codes_signaux": ["FORTE_RENTABILITE", "CAPACITE_INVESTISSEMENT"],
+    "honoraires_indicatifs": "Commission 2,5-7 % (au succès uniquement)",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_TRANSACTIONS_LEVEE_FONDS",
+    "titre": "Levée de fonds",
+    "description": "Analyse des besoins de financement, structuration et valorisation, business plan et pitch, négociation et closing avec les investisseurs.",
+    "benefice_client": "Financement adapté à l'ambition, valorisation optimisée et contrôle préservé",
+    "codes_signaux": ["FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "Sur devis",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_TRANSACTIONS_VALORISATION",
+    "titre": "Valorisation d'entreprise",
+    "description": "Évaluation multi-méthodes (patrimoniale, DCF, comparables), rapport de valorisation et préconisations stratégiques.",
+    "benefice_client": "Valeur de marché connue, position de négociation renforcée et processus sécurisé",
+    "codes_signaux": ["FORTE_RENTABILITE", "CESSION_ACTIFS_RECENTE"],
+    "honoraires_indicatifs": "3 000 € HT (ACOM), sur devis (TYLS)",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_PILOTAGE_PREVISIONNEL_TRESO",
+    "titre": "Prévisionnel de trésorerie",
+    "description": "Outil prévisionnel connecté à la comptabilité, simulation multi-scénarios, suivi des écarts prévisionnel/réalisé et accompagnement mensuel.",
+    "benefice_client": "Vision claire de la trésorerie future, décisions d'investissement éclairées et crédibilité face aux banques",
+    "codes_signaux": ["LIQUIDITE_CRITIQUE", "DECOUVERT_RECURRENT", "DESEQUILIBRE_BFR", "DELAI_CLIENTS_ELEVE", "SAISONNALITE_FORTE", "FRAIS_FINANCIERS_EN_HAUSSE", "ENDETTEMENT_EXCESSIF"],
+    "honoraires_indicatifs": "Sur devis (base 150 € HT/mois)",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_PILOTAGE_FINANCEMENT",
+    "titre": "Recherche de financement",
+    "description": "Structuration du besoin, préparation d'un dossier complet, mise en relation avec un courtier et négociation des offres.",
+    "benefice_client": "Meilleurs taux et conditions, dossier solide augmentant les chances de succès et gain de temps",
+    "codes_signaux": ["INVESTISSEMENT_RECENT", "FIN_EMPRUNT_PROCHE", "NOUVEAU_BAIL", "FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "% du financement obtenu",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PILOTAGE_DAF_EXTERNALISEE",
+    "titre": "DAF externalisée",
+    "description": "Accompagnement stratégique, tableaux de bord et KPI, élaboration budgétaire, optimisation des processus, gestion trésorerie/BFR et préparation des CODIR/CA.",
+    "benefice_client": "Visibilité financière accrue et décisions stratégiques éclairées, 10 fois moins cher qu'un recrutement de DAF",
+    "codes_signaux": ["ABSENCE_COMPTABILITE_ANALYTIQUE", "COMPLEXITE_COMPTABLE", "MARGE_NETTE_FAIBLE", "FORTE_CROISSANCE"],
+    "honoraires_indicatifs": "500 € HT/mois (1 jour)",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PILOTAGE_CONTROLE_GESTION",
+    "titre": "Contrôle de gestion",
+    "description": "Tableau sur mesure alimenté par le FEC et le budget, calcul du prix de revient, point mort en CA ou en jours et suivi des écarts.",
+    "benefice_client": "Plus jamais de vente à perte, prix justifiés et défendables, marges pilotées en temps réel",
+    "codes_signaux": ["MARGE_BRUTE_FAIBLE", "BAISSE_MARGE_BRUTE", "HAUSSE_ACHATS_SANS_CA", "MASSE_SALARIALE_ELEVEE", "ABSENCE_COMPTABILITE_ANALYTIQUE"],
+    "honoraires_indicatifs": "À partir de 2 000 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_PILOTAGE_TABLEAU_BORD",
+    "titre": "Tableau de bord mensuel",
+    "description": "Tableau de bord mensuel mis à jour automatiquement depuis la comptabilité : suivi CA, charges, personnel, avec entretiens réguliers.",
+    "benefice_client": "Information en temps réel, dérapages détectés tôt et échanges réguliers avec le conseiller",
+    "codes_signaux": ["BAISSE_CA_SIGNIFICATIVE", "SAISONNALITE_FORTE", "EBE_FAIBLE", "MARGE_BRUTE_FAIBLE"],
+    "honoraires_indicatifs": "100 € HT/mois + 100 €/h si RDV conseil",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_PILOTAGE_ZONE_CHALANDISE",
+    "titre": "Étude de zone de chalandise",
+    "description": "Étude personnalisée du potentiel de la zone : population, flux, concurrence, cartographies INSEE, intégrable au business plan ou dossier de financement.",
+    "benefice_client": "Décision basée sur des données réelles, faisabilité validée et crédibilité face aux financeurs",
+    "codes_signaux": ["BAISSE_CA_SIGNIFICATIVE", "FONDS_COMMERCIAL_RECENT"],
+    "honoraires_indicatifs": "Flash : 600 € HT / Performance : 600-1 200 €/an",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_SERVICES_ASSISTANAT_ADMIN",
+    "titre": "Assistanat administratif",
+    "description": "Gestion des emails, appels et RDV, rédaction de courriers, devis, factures et relances avec une assistante dédiée à distance.",
+    "benefice_client": "Gain de temps immédiat, charge mentale réduite et coûts maîtrisés",
+    "codes_signaux": ["DELAI_FACTURATION_LONG", "BALANCE_AGEE_DEGRADEE", "FRAIS_ADMINISTRATIFS_ELEVES", "FRAIS_BANCAIRES_EN_HAUSSE"],
+    "honoraires_indicatifs": "50 € HT/heure",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_SERVICES_ASSISTANAT_COMMERCIAL",
+    "titre": "Assistanat commercial",
+    "description": "Prospection téléphonique et prise de RDV, qualification et alimentation du CRM, campagnes emailing, suivi des leads et reporting.",
+    "benefice_client": "Plus de leads qualifiés, développement commercial régulier et flexibilité sans embauche",
+    "codes_signaux": ["BAISSE_CA_SIGNIFICATIVE", "ABSENCE_FORCE_COMMERCIALE", "EROSION_PORTEFEUILLE_CLIENTS", "DEPENSES_PUB_SANS_EFFET"],
+    "honoraires_indicatifs": "50 € HT/heure",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_SERVICES_RECOUVREMENT",
+    "titre": "Recouvrement de créances",
+    "description": "Suivi des factures et retards, relances amiables, préparation des dossiers contentieux avec solution Caarl intégrée.",
+    "benefice_client": "Trésorerie sécurisée, délais de paiement réduits et relation client préservée",
+    "codes_signaux": ["CLIENTS_DOUTEUX", "BALANCE_AGEE_DEGRADEE", "DELAI_CLIENTS_ELEVE", "CREANCES_PASSEES_EN_PERTE", "DEPRECIATION_CREANCES", "DECOUVERT_RECURRENT"],
+    "honoraires_indicatifs": "8 % des sommes recouvrées ou 45 € HT/h",
+    "priorite_proposition": 1
+  },
+  {
+    "id": "MISSION_SERVICES_RSE",
+    "titre": "RSE & environnement",
+    "description": "Diagnostic initial, rapport RSE (express, TPE, TPE+), indicateurs et axes d'amélioration, plan d'actions avec suivi.",
+    "benefice_client": "Image renforcée, accès aux appels d'offres exigeant une démarche RSE et indicateurs clairs",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 400 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_SERVICES_INFO_SOCLE",
+    "titre": "TYLS Informatique — Offre Socle sécurité & assistance",
+    "description": "Audit initial du parc, supervision continue des postes, assistance à distance avec interlocuteur dédié, protection antivirus et mises à jour automatiques.",
+    "benefice_client": "Informatique fiable et sécurisée au quotidien, support réactif, continuité d'activité et budget prévisible",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "29 € HT/mois/poste",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_SERVICES_INFO_CREATION",
+    "titre": "TYLS Informatique — Offre création/reprise",
+    "description": "Prise en charge complète du démarrage informatique : nom de domaine, adresses email professionnelles, environnement Microsoft 365, outils essentiels et paramétrage sécurisé.",
+    "benefice_client": "Environnement opérationnel dès le démarrage, image professionnelle et choix techniques durables sans gestion technique",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "Pack création à partir de 290 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_FORMATION_CREATION",
+    "titre": "Formation — Créer son entreprise",
+    "description": "Formation de 2-3 jours en présentiel avec méthodologie complète, projet construit en direct, éligible CPF.",
+    "benefice_client": "Projet de création validé et structuré, bons choix dès le départ et réseau activé",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 2 100 € HT",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_FORMATION_MANAGEMENT",
+    "titre": "Formation — Management & leadership",
+    "description": "Formations à la carte des fondamentaux au leadership, avec points d'avancement et hotline post-formation.",
+    "benefice_client": "Équipes mieux managées, turnover réduit et managers confiants",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 800 € HT/jour",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_FORMATION_COMMERCIAL",
+    "titre": "Formation — Développement commercial",
+    "description": "Techniques de vente et prospection, cold call et prise de RDV, construction d'un plan d'action commercial.",
+    "benefice_client": "Pipeline alimenté, taux de conversion en hausse et équipe commerciale structurée",
+    "codes_signaux": ["BAISSE_CA_SIGNIFICATIVE"],
+    "honoraires_indicatifs": "À partir de 800 € HT/jour",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_FORMATION_PRODUCTIVITE",
+    "titre": "Formation — Productivité & organisation",
+    "description": "Gestion du temps et des priorités, méthode Pomodoro, outils (Notion, Trello, Outlook) et ateliers pratiques.",
+    "benefice_client": "Plus de temps pour l'essentiel, moins de stress et productivité mesurable",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "800 € HT/jour",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_FORMATION_CHIFFRES",
+    "titre": "Formation — Maîtrise des chiffres",
+    "description": "Comptabilité générale, gestion de trésorerie, comptabilité analytique et contrôle de gestion pour dirigeants.",
+    "benefice_client": "Décisions prises en connaissance de cause, coûts et marges maîtrisés, arbitrages facilités",
+    "codes_signaux": ["EBE_FAIBLE", "MARGE_BRUTE_FAIBLE"],
+    "honoraires_indicatifs": "À partir de 800 € HT/jour",
+    "priorite_proposition": 2
+  },
+  {
+    "id": "MISSION_FORMATION_COMMUNICATION",
+    "titre": "Formation — Communication",
+    "description": "Communication interne et externe, écrits professionnels, SEA/SEO, réseaux sociaux et prise de parole en public.",
+    "benefice_client": "Messages clairs et impactants, équipes coordonnées et visibilité renforcée",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 800 € HT/jour",
+    "priorite_proposition": 3
+  },
+  {
+    "id": "MISSION_FORMATION_RSE",
+    "titre": "Formation — Fondamentaux RSE",
+    "description": "Initiation et pilotage RSE, auto-diagnostic avec indicateurs, plan d'action et cadre réglementaire.",
+    "benefice_client": "Accès aux nouveaux marchés et appels d'offres, image renforcée et conformité anticipée",
+    "codes_signaux": [],
+    "honoraires_indicatifs": "À partir de 800 € HT/jour",
+    "priorite_proposition": 3
+  }
+]

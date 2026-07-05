@@ -1,0 +1,1071 @@
+{
+  "LIQUIDITE_CRITIQUE": {
+    "categorie": "TRESORERIE",
+    "comptes_fec": [
+      "512",
+      "519"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "Solde < 0 sur 3 mois consécutifs",
+    "periode_reference": "12 derniers mois",
+    "parametrable": false
+  },
+  "DECOUVERT_RECURRENT": {
+    "categorie": "TRESORERIE",
+    "comptes_fec": [
+      "519",
+      "661"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "≥ 3 mois avec 519 > 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "TRESORERIE_EXCEDENTAIRE": {
+    "categorie": "TRESORERIE",
+    "comptes_fec": [
+      "512",
+      "271",
+      "272"
+    ],
+    "seuil_valeur": 80000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "80 000 €",
+    "periode_reference": "3 à 6 derniers mois",
+    "parametrable": true
+  },
+  "HAUSSE_TRESORERIE": {
+    "categorie": "TRESORERIE",
+    "comptes_fec": [
+      "512"
+    ],
+    "seuil_valeur": 20.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "+20 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "FRAIS_FINANCIERS_EN_HAUSSE": {
+    "categorie": "TRESORERIE",
+    "comptes_fec": [
+      "661"
+    ],
+    "seuil_valeur": 20.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "+20 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "FRAIS_BANCAIRES_EN_HAUSSE": {
+    "categorie": "TRESORERIE",
+    "comptes_fec": [
+      "627"
+    ],
+    "seuil_valeur": 20.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "+20 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "DELAI_CLIENTS_ELEVE": {
+    "categorie": "CYCLE_CLIENTS",
+    "comptes_fec": [
+      "411",
+      "70"
+    ],
+    "seuil_valeur": 60,
+    "seuil_unite": "JOURS",
+    "seuil_texte": "60 jours",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "BALANCE_AGEE_DEGRADEE": {
+    "categorie": "CYCLE_CLIENTS",
+    "comptes_fec": [
+      "411"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "10 000 € ou 15 % du 411",
+    "periode_reference": "Clôture N",
+    "parametrable": false
+  },
+  "CLIENTS_DOUTEUX": {
+    "categorie": "CYCLE_CLIENTS",
+    "comptes_fec": [
+      "416"
+    ],
+    "seuil_valeur": 0,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 0 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "CREANCES_PASSEES_EN_PERTE": {
+    "categorie": "CYCLE_CLIENTS",
+    "comptes_fec": [
+      "654"
+    ],
+    "seuil_valeur": 0,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 0 €",
+    "periode_reference": "N et N-1",
+    "parametrable": true
+  },
+  "DEPRECIATION_CREANCES": {
+    "categorie": "CYCLE_CLIENTS",
+    "comptes_fec": [
+      "491"
+    ],
+    "seuil_valeur": 0,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 0 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "EROSION_PORTEFEUILLE_CLIENTS": {
+    "categorie": "CYCLE_CLIENTS",
+    "comptes_fec": [
+      "411"
+    ],
+    "seuil_valeur": -15.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "-15 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "DELAI_FACTURATION_LONG": {
+    "categorie": "CYCLE_CLIENTS",
+    "comptes_fec": [
+      "411",
+      "70"
+    ],
+    "seuil_valeur": 15,
+    "seuil_unite": "JOURS",
+    "seuil_texte": "15 jours",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "DESEQUILIBRE_BFR": {
+    "categorie": "TRESORERIE",
+    "comptes_fec": [
+      "411",
+      "401",
+      "3",
+      "70"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "60 jours de CA ou +25 % N/N-1",
+    "periode_reference": "Clôture N vs N-1",
+    "parametrable": false
+  },
+  "FORTE_CROISSANCE": {
+    "categorie": "ACTIVITE",
+    "comptes_fec": [
+      "70"
+    ],
+    "seuil_valeur": 20.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "+20 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "BAISSE_CA_SIGNIFICATIVE": {
+    "categorie": "ACTIVITE",
+    "comptes_fec": [
+      "70"
+    ],
+    "seuil_valeur": -15.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "-15 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "SAISONNALITE_FORTE": {
+    "categorie": "ACTIVITE",
+    "comptes_fec": [
+      "70"
+    ],
+    "seuil_valeur": 30.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "30 %",
+    "periode_reference": "12 derniers mois",
+    "parametrable": true
+  },
+  "EBE_FAIBLE": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "70",
+      "60",
+      "61",
+      "62",
+      "63",
+      "64"
+    ],
+    "seuil_valeur": 5.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "EBE/CA < 5 %",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "EBE_NEGATIF": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "70",
+      "60",
+      "61",
+      "62",
+      "63",
+      "64"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "EBE < 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "MARGE_BRUTE_FAIBLE": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "70",
+      "60"
+    ],
+    "seuil_valeur": 25.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "Seuil sectoriel (défaut : < 25 %)",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "BAISSE_MARGE_BRUTE": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "70",
+      "60"
+    ],
+    "seuil_valeur": 5,
+    "seuil_unite": "NOMBRE",
+    "seuil_texte": "-5 points N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "HAUSSE_ACHATS_SANS_CA": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "60",
+      "70"
+    ],
+    "seuil_valeur": 10.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "Achats +10 %, CA ≤ 0 %",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "MARGE_NETTE_FAIBLE": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "12",
+      "70"
+    ],
+    "seuil_valeur": 3.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "< 3 %",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "FORTE_RENTABILITE": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "12",
+      "70"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "RN/CA > 10 % ou RN > 80 K€ (2 ans)",
+    "periode_reference": "N et N-1",
+    "parametrable": false
+  },
+  "RESULTAT_NET_ELEVE_RECURRENT": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "12"
+    ],
+    "seuil_valeur": 150000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "150 000 € (3 ans)",
+    "periode_reference": "N, N-1, N-2",
+    "parametrable": true
+  },
+  "RESULTAT_EN_CROISSANCE": {
+    "categorie": "RENTABILITE",
+    "comptes_fec": [
+      "12"
+    ],
+    "seuil_valeur": 15.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "+15 %/an sur 2 ans",
+    "periode_reference": "N, N-1, N-2",
+    "parametrable": true
+  },
+  "CAPACITE_INVESTISSEMENT": {
+    "categorie": "PATRIMOINE",
+    "comptes_fec": [
+      "512",
+      "455"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "512 > 80 K€ ou 455 > 50 K€",
+    "periode_reference": "6 derniers mois",
+    "parametrable": false
+  },
+  "ENDETTEMENT_EXCESSIF": {
+    "categorie": "FINANCEMENT",
+    "comptes_fec": [
+      "16",
+      "10",
+      "12",
+      "661",
+      "70"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "Ratio > 1,5 ou 661/CA > 3 %",
+    "periode_reference": "Clôture N",
+    "parametrable": false
+  },
+  "OPTIMISATION_FISCALE": {
+    "categorie": "FISCALITE",
+    "comptes_fec": [
+      "695",
+      "12",
+      "6414",
+      "6467"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "695 > 25 K€",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "PENALITES_FISCALES": {
+    "categorie": "FISCALITE",
+    "comptes_fec": [
+      "6712"
+    ],
+    "seuil_valeur": 0,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 0 €",
+    "periode_reference": "N et N-1",
+    "parametrable": true
+  },
+  "PENALITES_SOCIALES": {
+    "categorie": "SOCIAL",
+    "comptes_fec": [
+      "6714"
+    ],
+    "seuil_valeur": 0,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 0 €",
+    "periode_reference": "N et N-1",
+    "parametrable": true
+  },
+  "FRAIS_CONTENTIEUX_ELEVES": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "6227"
+    ],
+    "seuil_valeur": 1000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "1 000 €/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "PROVISION_RISQUE_SOCIAL": {
+    "categorie": "SOCIAL",
+    "comptes_fec": [
+      "158",
+      "1511"
+    ],
+    "seuil_valeur": 0,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 0 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "PRESENCE_SALARIES": {
+    "categorie": "SOCIAL",
+    "comptes_fec": [
+      "641",
+      "645"
+    ],
+    "seuil_valeur": 0,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 0 €",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "MASSE_SALARIALE_ELEVEE": {
+    "categorie": "SOCIAL",
+    "comptes_fec": [
+      "641",
+      "645",
+      "70"
+    ],
+    "seuil_valeur": 60.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "60 % du CA",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "CHARGES_SOCIALES_ELEVEES": {
+    "categorie": "SOCIAL",
+    "comptes_fec": [
+      "645",
+      "641"
+    ],
+    "seuil_valeur": 45.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "45 %",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "ABSENCE_INTERESSEMENT": {
+    "categorie": "SOCIAL",
+    "comptes_fec": [
+      "6414",
+      "12"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "6414 = 0 et RN > 80 K€",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "ABSENCE_PROVISION_IFC": {
+    "categorie": "SOCIAL",
+    "comptes_fec": [
+      "153",
+      "641"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "153 = 0 et 641 > 100 K€",
+    "periode_reference": "Clôture N",
+    "parametrable": false
+  },
+  "REMUNERATION_DIRIGEANT_ELEVEE": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "6411",
+      "641"
+    ],
+    "seuil_valeur": 48000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "48 000 €/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "VARIATION_REMUNERATION_DIRIGEANT": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "6411"
+    ],
+    "seuil_valeur": 15.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "±15 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "RATIO_DIVIDENDES_ELEVE": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "457",
+      "6411"
+    ],
+    "seuil_valeur": 60.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "60 %",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "SOUS_REMUNERATION_DIRIGEANT": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "12",
+      "6411"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "RN > 80 K€ et 6411 < 40 K€",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "DIVIDENDES_RECURRENTS": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "457"
+    ],
+    "seuil_valeur": 50000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "50 000 €/an (3 ans)",
+    "periode_reference": "N, N-1, N-2",
+    "parametrable": true
+  },
+  "ABSENCE_PREVOYANCE_MADELIN": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "6467",
+      "646",
+      "6411"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "6467 = 0 et rémunération > 36 K€",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "ABSENCE_PER_RETRAITE": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "6468",
+      "6467",
+      "646"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "= 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "CHARGES_SOCIALES_PERSO_ELEVEES": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "646",
+      "12"
+    ],
+    "seuil_valeur": 30.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "30 % du résultat",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "RESULTAT_BNC_ELEVE": {
+    "categorie": "DIRIGEANT",
+    "comptes_fec": [
+      "12",
+      "70"
+    ],
+    "seuil_valeur": 100000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "100 000 €",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "SEUIL_TVA_MICRO_DEPASSE": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "70"
+    ],
+    "seuil_valeur": 77000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "77 000 €",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "COMPTE_COURANT_CREDITEUR_ELEVE": {
+    "categorie": "PATRIMOINE",
+    "comptes_fec": [
+      "455"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "50 000 € (paliers 100/150/200 K€)",
+    "periode_reference": "Clôture N",
+    "parametrable": false
+  },
+  "PORTEFEUILLE_FINANCIER_IMPORTANT": {
+    "categorie": "PATRIMOINE",
+    "comptes_fec": [
+      "26",
+      "27",
+      "50",
+      "51"
+    ],
+    "seuil_valeur": 500000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "500 000 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "CESSION_ACTIFS_RECENTE": {
+    "categorie": "PATRIMOINE",
+    "comptes_fec": [
+      "775",
+      "757"
+    ],
+    "seuil_valeur": 50000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "50 000 €",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "CAPITAUX_PROPRES_ELEVES_SANS_HOLDING": {
+    "categorie": "PATRIMOINE",
+    "comptes_fec": [
+      "10",
+      "11",
+      "12",
+      "261"
+    ],
+    "seuil_valeur": 500000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "500 000 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "TITRES_PARTICIPATION_DETECTES": {
+    "categorie": "PATRIMOINE",
+    "comptes_fec": [
+      "261",
+      "271"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "Nouveau mouvement > 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "IMMO_LOCATIF_DETECTE": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "213",
+      "214"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "> 0 avec libellé locatif",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "IMMO_LOCATIF_NON_AMORTI": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "213",
+      "214",
+      "2813",
+      "2814"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "213/214 > 0 et 2813/2814 = 0",
+    "periode_reference": "Clôture N",
+    "parametrable": false
+  },
+  "REVENUS_LOCATIFS_ELEVES": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "706",
+      "708",
+      "70"
+    ],
+    "seuil_valeur": 30000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "30 000 €/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "MULTI_BIENS_IMMOBILIERS": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "213"
+    ],
+    "seuil_valeur": 2,
+    "seuil_unite": "NOMBRE",
+    "seuil_texte": "≥ 2 biens distincts",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "PATRIMOINE_IMMO_IMPORTANT": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "213",
+      "214"
+    ],
+    "seuil_valeur": 300000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "300 000 € (500 K€ multi-dossiers)",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "CA_LOCATIF_CONSOLIDE_ELEVE": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "706",
+      "708"
+    ],
+    "seuil_valeur": 80000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "80 000 €/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "AMORTISSEMENTS_AVANCES": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "2813",
+      "213"
+    ],
+    "seuil_valeur": 80.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "80 %",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "IMMO_PRO_ELEVEE": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "213"
+    ],
+    "seuil_valeur": 400000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "400 000 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "LOYERS_VERSES_ELEVES": {
+    "categorie": "IMMOBILIER",
+    "comptes_fec": [
+      "613"
+    ],
+    "seuil_valeur": 60000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "60 000 €/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "EMPRUNTS_MULTIPLES": {
+    "categorie": "FINANCEMENT",
+    "comptes_fec": [
+      "164"
+    ],
+    "seuil_valeur": 3,
+    "seuil_unite": "NOMBRE",
+    "seuil_texte": "≥ 3 emprunts distincts",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "NOUVEL_EMPRUNT": {
+    "categorie": "FINANCEMENT",
+    "comptes_fec": [
+      "164"
+    ],
+    "seuil_valeur": 50000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "> 50 000 €",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "FIN_EMPRUNT_PROCHE": {
+    "categorie": "FINANCEMENT",
+    "comptes_fec": [
+      "164",
+      "168"
+    ],
+    "seuil_valeur": 10.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "< 10 % du montant initial",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "INVESTISSEMENT_RECENT": {
+    "categorie": "FINANCEMENT",
+    "comptes_fec": [
+      "20",
+      "21",
+      "23"
+    ],
+    "seuil_valeur": 50000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "50 000 €",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "CONSTRUCTION_EN_COURS": {
+    "categorie": "FINANCEMENT",
+    "comptes_fec": [
+      "231",
+      "213"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "> 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "NOUVEAU_BAIL": {
+    "categorie": "FINANCEMENT",
+    "comptes_fec": [
+      "275"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "Nouveau mouvement > 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "AUGMENTATION_CAPITAL": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "101"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "Variation > 0",
+    "periode_reference": "N vs N-1",
+    "parametrable": false
+  },
+  "NOUVEL_ASSOCIE": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "4561",
+      "108"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "Mouvement > 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "NOUVELLES_ACTIVITES": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "70"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "≥ 1 nouveau compte 70x",
+    "periode_reference": "N vs N-1",
+    "parametrable": false
+  },
+  "HONORAIRES_EXCEPTIONNELS_EN_HAUSSE": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "6226"
+    ],
+    "seuil_valeur": 50.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "+50 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "HONORAIRES_JURIDIQUES_ELEVES": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "6226",
+      "6228"
+    ],
+    "seuil_valeur": 2000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "2 000 €/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "ABSENCE_ASSURANCE_RC": {
+    "categorie": "ASSURANCE",
+    "comptes_fec": [
+      "616"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "616 = 0",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "ACTIFS_A_ASSURER": {
+    "categorie": "ASSURANCE",
+    "comptes_fec": [
+      "21",
+      "3"
+    ],
+    "seuil_valeur": 50000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "50 000 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "HAUSSE_IMMOBILISATIONS": {
+    "categorie": "ASSURANCE",
+    "comptes_fec": [
+      "21"
+    ],
+    "seuil_valeur": 20.0,
+    "seuil_unite": "PCT",
+    "seuil_texte": "+20 % N/N-1",
+    "periode_reference": "N vs N-1",
+    "parametrable": true
+  },
+  "PARC_VEHICULES_IMPORTANT": {
+    "categorie": "ASSURANCE",
+    "comptes_fec": [
+      "2182",
+      "6122",
+      "6135"
+    ],
+    "seuil_valeur": 5,
+    "seuil_unite": "NOMBRE",
+    "seuil_texte": "≥ 5 véhicules",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "PARC_MACHINES_IMPORTANT": {
+    "categorie": "ASSURANCE",
+    "comptes_fec": [
+      "215"
+    ],
+    "seuil_valeur": 50000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "50 000 €",
+    "periode_reference": "Clôture N",
+    "parametrable": true
+  },
+  "FRAIS_TRANSPORT_ELEVES": {
+    "categorie": "ASSURANCE",
+    "comptes_fec": [
+      "6241",
+      "6242"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "10 000 €/an ou > 50 écritures/an",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "VOLUME_FACTURATION_ELEVE": {
+    "categorie": "FACTURATION",
+    "comptes_fec": [
+      "70",
+      "60"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "30 émises/mois ou 50 reçues/mois",
+    "periode_reference": "12 derniers mois",
+    "parametrable": false
+  },
+  "NOMBREUX_FOURNISSEURS": {
+    "categorie": "FACTURATION",
+    "comptes_fec": [
+      "401"
+    ],
+    "seuil_valeur": 50,
+    "seuil_unite": "NOMBRE",
+    "seuil_texte": "50 fournisseurs",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "ACOMPTES_FREQUENTS": {
+    "categorie": "FACTURATION",
+    "comptes_fec": [
+      "4191"
+    ],
+    "seuil_valeur": 5,
+    "seuil_unite": "NOMBRE",
+    "seuil_texte": "5 lignes/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "NON_EQUIPE_FACTURE_ELECTRONIQUE": {
+    "categorie": "FACTURATION",
+    "comptes_fec": [
+      "6226",
+      "6228",
+      "6135"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "0 écriture PDP/Chorus",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "FRAIS_ADMINISTRATIFS_ELEVES": {
+    "categorie": "ORGANISATION",
+    "comptes_fec": [
+      "626"
+    ],
+    "seuil_valeur": 3000,
+    "seuil_unite": "EUR",
+    "seuil_texte": "3 000 €/an",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "ABSENCE_FORCE_COMMERCIALE": {
+    "categorie": "COMMERCIAL",
+    "comptes_fec": [
+      "6221",
+      "70"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "6221 = 0 et CA > 200 K€",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "DEPENSES_PUB_SANS_EFFET": {
+    "categorie": "COMMERCIAL",
+    "comptes_fec": [
+      "6231",
+      "70"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "6231 > 5 K€ et CA ≤ 0 %",
+    "periode_reference": "N vs N-1",
+    "parametrable": false
+  },
+  "ABSENCE_COMPTABILITE_ANALYTIQUE": {
+    "categorie": "PILOTAGE",
+    "comptes_fec": [
+      "70"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "CA > 1 M€ sans analytique",
+    "periode_reference": "Exercice N",
+    "parametrable": false
+  },
+  "COMPLEXITE_COMPTABLE": {
+    "categorie": "PILOTAGE",
+    "comptes_fec": [],
+    "seuil_valeur": 8,
+    "seuil_unite": "NOMBRE",
+    "seuil_texte": "8 journaux",
+    "periode_reference": "Exercice N",
+    "parametrable": true
+  },
+  "FONDS_COMMERCIAL_RECENT": {
+    "categorie": "PILOTAGE",
+    "comptes_fec": [
+      "207"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "> 0",
+    "periode_reference": "N et N-1",
+    "parametrable": false
+  },
+  "DEPASSEMENT_SEUILS_CAC": {
+    "categorie": "JURIDIQUE",
+    "comptes_fec": [
+      "70",
+      "641"
+    ],
+    "seuil_valeur": null,
+    "seuil_unite": null,
+    "seuil_texte": "2 des 3 seuils (CA 8 M€ / bilan 4 M€ / 50 salariés)",
+    "periode_reference": "Clôture N",
+    "parametrable": false
+  }
+}
