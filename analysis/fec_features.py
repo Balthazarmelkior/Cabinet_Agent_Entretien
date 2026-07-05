@@ -8,9 +8,19 @@ from pydantic import BaseModel, Field
 
 def _sums_by_account(df: pd.DataFrame) -> tuple[dict[str, float], dict[str, float]]:
     """Retourne (debit_par_compte, credit_par_compte) agrégés par CompteNum."""
-    debit = pd.to_numeric(df.get("Debit"), errors="coerce").fillna(0)
-    credit = pd.to_numeric(df.get("Credit"), errors="coerce").fillna(0)
     comptes = df["CompteNum"].astype(str)
+    if "Debit" in df.columns and "Credit" in df.columns:
+        debit = pd.to_numeric(df["Debit"], errors="coerce").fillna(0)
+        credit = pd.to_numeric(df["Credit"], errors="coerce").fillna(0)
+    elif "Montant" in df.columns and "Sens" in df.columns:
+        montant = pd.to_numeric(df["Montant"], errors="coerce").fillna(0)
+        sens = df["Sens"].astype(str).str.upper().str[0]   # 'D'/'C'
+        debit = montant.where(sens == "D", 0.0)
+        credit = montant.where(sens == "C", 0.0)
+    else:
+        raise ValueError(
+            "FEC illisible : colonnes attendues 'Debit'+'Credit' ou 'Montant'+'Sens'."
+        )
     d = debit.groupby(comptes).sum().to_dict()
     c = credit.groupby(comptes).sum().to_dict()
     return {k: float(v) for k, v in d.items()}, {k: float(v) for k, v in c.items()}
@@ -32,6 +42,8 @@ class IndicateursFEC(BaseModel):
         return d, c
 
     def solde(self, prefixes: list[str], sens: str = "D", *, n1: bool = False) -> float:
+        if sens not in ("D", "C"):
+            raise ValueError(f"sens invalide: {sens!r} (attendu 'D' ou 'C')")
         d, c = self._agg(prefixes, n1=n1)
         return (d - c) if sens == "D" else (c - d)
 

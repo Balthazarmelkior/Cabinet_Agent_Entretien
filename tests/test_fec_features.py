@@ -64,3 +64,25 @@ def test_ratio_pct_et_none_si_denominateur_nul():
 def test_ca_memorise():
     f = compute_fec_features(_df([("706000", 0, 200000, "20240101")]))
     assert f.ca_n == 200000
+
+
+def test_sens_invalide_leve():
+    f = compute_fec_features(_df([("641100", 60000, 0, "20240131")]))
+    with pytest.raises(ValueError):
+        f.solde(["6411"], "X")
+
+
+def test_montant_sens_format():
+    df = pd.DataFrame([
+        {"CompteNum": "706000", "Montant": 30000, "Sens": "C", "EcritureDate": "20240630"},
+        {"CompteNum": "641100", "Montant": 60000, "Sens": "D", "EcritureDate": "20240131"},
+    ])
+    f = compute_fec_features(df)
+    assert f.solde(["706"], "C") == 30000
+    assert f.solde(["6411"], "D") == 60000
+
+
+def test_colonnes_manquantes_leve():
+    df = pd.DataFrame([{"CompteNum": "706000", "EcritureDate": "20240630"}])
+    with pytest.raises(ValueError, match="FEC illisible"):
+        compute_fec_features(df)
