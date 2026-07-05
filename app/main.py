@@ -296,12 +296,9 @@ def run_analysis(fichier, nom_client, code_naf, catalogue_path, fichier_n1=None,
         status.empty()
 
         suffix = Path(fichier.name).suffix.lower()
-        if suffix in (".txt", ".csv") and final_state.get("indicateurs_fec") is None:
-            st.warning(
-                "⚠️ Signaux fins FEC non disponibles : format de fichier non reconnu "
-                "(colonnes Débit/Crédit ou Montant+Sens attendues). Les signaux détaillés "
-                "sur comptes n'ont pas pu être calculés."
-            )
+        st.session_state["fec_indispo"] = (
+            suffix in (".txt", ".csv") and final_state.get("indicateurs_fec") is None
+        )
 
         st.session_state["analyse"]      = final_state
         st.session_state["nom_client"]   = nom_client
@@ -330,6 +327,13 @@ def render_dashboard():
     from app.components.download import get_word_bytes
     from app.components.treasury import render_bfr_waterfall, render_cycle_bars, render_treasury_gauge, render_tresorerie_curve
     from app.components.activity import render_ca_curve
+
+    if st.session_state.get("fec_indispo"):
+        st.warning(
+            "⚠️ Signaux fins FEC non disponibles : format de fichier non reconnu "
+            "(colonnes Débit/Crédit ou Montant+Sens attendues). Les signaux détaillés "
+            "sur comptes n'ont pas pu être calculés."
+        )
 
     analyse   = st.session_state["analyse"]
     donnees   = analyse["donnees_financieres"]
