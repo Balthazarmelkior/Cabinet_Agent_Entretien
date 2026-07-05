@@ -21,8 +21,9 @@ extract_financial_data (node)
 detect_signals (node)
   ├─ detect_signals_from_rules(ratios)                     (existant)
   ├─ detect_signals_from_donnees(donnees, ratios)          (existant)
-  └─ detect_signals_from_fec(features, seuils_config)      ← NOUVEAU
+  └─ detect_signals_from_fec(features, seuils_overrides)   ← NOUVEAU
 ```
+`seuils_overrides` (dict `{code: valeur}`) provient de l'UI Streamlit via le state ; vide par défaut → seuils du référentiel.
 
 ### Nouveaux fichiers / modifications
 | Fichier | Rôle |
@@ -32,7 +33,9 @@ detect_signals (node)
 | `models.py` (modif) | ajout du modèle `IndicateursFEC` |
 | `graph.py` (modif) | `BillanState` gagne `indicateurs_fec: Optional[IndicateursFEC]` |
 | `nodes/extract_financial_data.py` (modif) | calcule et stocke `indicateurs_fec` |
-| `nodes/detect_signals.py` (modif) | appelle `detect_signals_from_fec` et concatène |
+| `nodes/detect_signals.py` (modif) | appelle `detect_signals_from_fec(features, seuils_overrides)` et concatène |
+| `app/main.py` (modif) | expander « Seuils de détection » : inputs pré-remplis pour les signaux paramétrables → `seuils_overrides` injecté dans le state |
+| `graph.py` (modif) | `BillanState` gagne `seuils_overrides: dict[str, float]` (défaut `{}`) ; `prepare_entretien_bilan` accepte le paramètre |
 
 Le `df` brut est déjà chargé par `parsers.fec_parser._load_df`. `compute_fec_features` réutilise ce df (et celui de N-1 s'il existe) — pas de re-parsing.
 
@@ -77,8 +80,12 @@ Le moteur lit la table `GENERIC_SIGNALS` (mapping code → opérateur + type/gra
 ### Détecteurs explicites
 Une fonction par règle composée / ratio / variation, renvoyant `Signal | None`. Regroupées par nature dans `fec_signals.py`.
 
-### Seuils paramétrables
-Les entrées `parametrable: true` avec `seuil_valeur` non nul lisent leur seuil depuis le référentiel, surchargeable via une config d'environnement (`FEC_SEUILS_OVERRIDE` = chemin JSON optionnel de surcharges `{code: valeur}`). Pas de valeur en dur pour ces cas. Les seuils `parametrable: false` (règles structurelles) restent définis dans le code du détecteur explicite.
+### Seuils paramétrables (édités dans l'UI Streamlit)
+- **Défauts** : lus depuis `seuils_signaux.json` (`seuil_valeur` des entrées `parametrable: true`). Aucune valeur en dur pour ces cas.
+- **Surcharge** : `detect_signals_from_fec(features, seuils_overrides)` reçoit un dict `{code: valeur}` porté par `BillanState["seuils_overrides"]`. Le seuil effectif d'un code = `seuils_overrides.get(code, defaut_referentiel)`.
+- **Source des surcharges = l'UI Streamlit.** `app/main.py` ajoute un expander « ⚙️ Seuils de détection (avancé) » dans le formulaire : pour chaque signal `parametrable: true`, un `st.number_input` libellé (titre lisible + unité) pré-rempli avec le défaut du référentiel. À la soumission, seuls les inputs modifiés (≠ défaut) sont collectés dans `seuils_overrides` et passés à `graph.stream({... "seuils_overrides": ...})`.
+- **Helper partagé** : une fonction `seuils_parametrables(referentiel) -> dict[str, float]` (dans `analysis/fec_signals.py`) fournit la liste code→défaut, consommée à la fois par l'UI (pour générer les inputs) et par le moteur (pour les défauts) — une seule source, pas de duplication.
+- Les seuils `parametrable: false` (règles structurelles, `seuil_valeur: null`) restent définis dans le code du détecteur explicite et **ne sont pas exposés** dans l'UI.
 
 ## Périmètre exhaustif — 45 codes famille A
 
@@ -175,12 +182,13 @@ Exclusions notées :
 
 ## Tests
 - `tests/test_fec_features.py` : `compute_fec_features` sur un FEC synthétique fin (lignes multi-comptes, N et N-1). Vérifie les soldes par préfixe, la **convention de signe** (455 créditeur → magnitude positive ; charge classe 6 ; produit classe 7 ; actif bilan), `variation_pct`/`ratio_pct` (dont cas `None`).
-- `tests/test_fec_signals.py` : pour le moteur générique, un cas déclenché + un cas juste sous le seuil par opérateur ; pour **chaque détecteur explicite**, cas déclenché + cas borne non déclenché ; cas « FEC N-1 absent → aucun signal de variation ».
+- `tests/test_fec_signals.py` : pour le moteur générique, un cas déclenché + un cas juste sous le seuil par opérateur ; pour **chaque détecteur explicite**, cas déclenché + cas borne non déclenché ; cas « FEC N-1 absent → aucun signal de variation » ; **cas surcharge** : un `seuils_overrides={code: valeur}` modifie l'émission d'un signal paramétrable (le seuil UI prime sur le référentiel) ; `seuils_parametrables()` renvoie bien code→défaut pour toutes les entrées `parametrable: true`.
 - E2E (`tests/test_pipeline_e2e.py`) : un FEC synthétique riche (dirigeant sur-rémunéré, 455 créditeur, 616=0, 6712>0…) traverse `extract_financial_data → detect_signals → match_missions` et fait remonter au moins les missions attendues (`MISSION_PROTECTION_STATUT_SOCIAL`, `MISSION_PROTECTION_RC_PRO`, `MISSION_COMPTA_PACK_SERENITE`, `MISSION_PATRIMOINE_SUCCESSION`).
 - Cible : suite complète verte, aucune régression sur les 151 tests Phase 1.
 
 ## Décisions actées
 - Approche extraction : objet features unique `IndicateursFEC` (vs étendre `DonneesFinancieres` / requêter le df par signal).
 - Détection : hybride (moteur générique JSON-driven + détecteurs explicites).
+- Seuils paramétrables édités dans l'UI Streamlit (surcharge via le state), défauts issus du référentiel — pas de fichier d'env dédié.
 - Priorisation : largeur (couche extraction + famille A) avant profondeur métier.
 - Le vocabulaire des codes reste aligné 1:1 sur `seuils_signaux.json` → matcher inchangé.
