@@ -242,12 +242,123 @@ def _codes_donnees(donnees):
     return {s.code for s in detect_signals_from_donnees(donnees, compute_ratios(donnees))}
 
 
+def _donnees(**postes):
+    """Entreprise neutre (aucun signal absolu hors PRESENCE_SALARIES).
+
+    CA 500k / achats 200k → marge brute 60% ; RN 60k → marge nette 12% ;
+    masse salariale 20% ; tréso 5k ; CP 200k. Remplacer un poste via kwarg
+    (ex. ``achats_consommes=PosteComptable(...)``) pour isoler un code.
+    """
+    from models import DonneesFinancieres, PosteComptable
+    base = dict(
+        exercice_n=2024,
+        chiffre_affaires=PosteComptable(libelle="CA", montant_n=500_000),
+        achats_consommes=PosteComptable(libelle="A", montant_n=200_000),
+        charges_externes=PosteComptable(libelle="CE", montant_n=50_000),
+        charges_personnel=PosteComptable(libelle="CP", montant_n=100_000),
+        ebe=PosteComptable(libelle="EBE", montant_n=100_000),
+        resultat_exploitation=PosteComptable(libelle="Rex", montant_n=80_000),
+        resultat_net=PosteComptable(libelle="RN", montant_n=60_000),
+        immobilisations_nettes=PosteComptable(libelle="Immo", montant_n=100_000),
+        stocks=PosteComptable(libelle="S", montant_n=20_000),
+        creances_clients=PosteComptable(libelle="Cl", montant_n=40_000),
+        tresorerie_actif=PosteComptable(libelle="T", montant_n=5_000),
+        capitaux_propres=PosteComptable(libelle="Cap", montant_n=200_000),
+        dettes_financieres=PosteComptable(libelle="DF", montant_n=50_000),
+        dettes_fournisseurs=PosteComptable(libelle="Fo", montant_n=30_000),
+    )
+    base.update(postes)
+    return DonneesFinancieres(**base)
+
+
 def test_donnees_saine_emits_absolute_signals(donnees_saine):
     codes = _codes_donnees(donnees_saine)
     # CA 1M, tréso 200k>80k, CP 500k, salariés présents
     assert "TRESORERIE_EXCEDENTAIRE" in codes
     assert "PRESENCE_SALARIES" in codes
     assert "RESULTAT_NET_ELEVE_RECURRENT" in codes  # RN 160k > 150k
+    # CP == 500_000 exactement : borne stricte non atteinte
+    assert "CAPITAUX_PROPRES_ELEVES_SANS_HOLDING" not in codes
+    # Marges saines (brute 60%, nette 16%) : pas de faux positif
+    assert "MARGE_BRUTE_FAIBLE" not in codes
+    assert "MARGE_NETTE_FAIBLE" not in codes
+
+
+def test_capitaux_propres_eleves_boundary():
+    from models import PosteComptable
+    assert "CAPITAUX_PROPRES_ELEVES_SANS_HOLDING" not in _codes_donnees(
+        _donnees(capitaux_propres=PosteComptable(libelle="Cap", montant_n=500_000))
+    )
+    assert "CAPITAUX_PROPRES_ELEVES_SANS_HOLDING" in _codes_donnees(
+        _donnees(capitaux_propres=PosteComptable(libelle="Cap", montant_n=500_001))
+    )
+
+
+def test_marge_brute_faible_boundary():
+    from models import PosteComptable
+    # CA 500k, achats 400k → marge brute 20% (< 25) → déclenché
+    assert "MARGE_BRUTE_FAIBLE" in _codes_donnees(
+        _donnees(achats_consommes=PosteComptable(libelle="A", montant_n=400_000))
+    )
+    # achats 375k → marge brute exactement 25% (seuil strict <25) → non déclenché
+    assert "MARGE_BRUTE_FAIBLE" not in _codes_donnees(
+        _donnees(achats_consommes=PosteComptable(libelle="A", montant_n=375_000))
+    )
+
+
+def test_marge_nette_faible_boundary():
+    from models import PosteComptable
+    # CA 500k, RN 10k → marge nette 2% (< 3) → déclenché
+    assert "MARGE_NETTE_FAIBLE" in _codes_donnees(
+        _donnees(resultat_net=PosteComptable(libelle="RN", montant_n=10_000))
+    )
+    # RN 15k → marge nette exactement 3% (seuil strict <3) → non déclenché
+    assert "MARGE_NETTE_FAIBLE" not in _codes_donnees(
+        _donnees(resultat_net=PosteComptable(libelle="RN", montant_n=15_000))
+    )
+
+
+def test_hausse_achats_sans_ca_boundary():
+    from models import PosteComptable
+    # achats +15% ET CA 0% → déclenché
+    assert "HAUSSE_ACHATS_SANS_CA" in _codes_donnees(_donnees(
+        achats_consommes=PosteComptable(libelle="A", montant_n=200_000, variation_pct=15.0),
+        chiffre_affaires=PosteComptable(libelle="CA", montant_n=500_000, variation_pct=0.0),
+    ))
+    # achats +10% (non > 10) ET CA 0% → non déclenché
+    assert "HAUSSE_ACHATS_SANS_CA" not in _codes_donnees(_donnees(
+        achats_consommes=PosteComptable(libelle="A", montant_n=200_000, variation_pct=10.0),
+        chiffre_affaires=PosteComptable(libelle="CA", montant_n=500_000, variation_pct=0.0),
+    ))
+    # achats +15% MAIS CA +5% (> 0) → non déclenché
+    assert "HAUSSE_ACHATS_SANS_CA" not in _codes_donnees(_donnees(
+        achats_consommes=PosteComptable(libelle="A", montant_n=200_000, variation_pct=15.0),
+        chiffre_affaires=PosteComptable(libelle="CA", montant_n=500_000, variation_pct=5.0),
+    ))
+
+
+def test_resultat_en_croissance_boundary():
+    from models import PosteComptable
+    # RN variation +20% (> 15) → déclenché
+    assert "RESULTAT_EN_CROISSANCE" in _codes_donnees(
+        _donnees(resultat_net=PosteComptable(libelle="RN", montant_n=60_000, variation_pct=20.0))
+    )
+    # RN variation +15% (non > 15) → non déclenché
+    assert "RESULTAT_EN_CROISSANCE" not in _codes_donnees(
+        _donnees(resultat_net=PosteComptable(libelle="RN", montant_n=60_000, variation_pct=15.0))
+    )
+
+
+def test_erosion_portefeuille_clients_boundary():
+    from models import PosteComptable
+    # créances -20% (< -15) → déclenché
+    assert "EROSION_PORTEFEUILLE_CLIENTS" in _codes_donnees(
+        _donnees(creances_clients=PosteComptable(libelle="Cl", montant_n=40_000, variation_pct=-20.0))
+    )
+    # créances -15% (non < -15) → non déclenché
+    assert "EROSION_PORTEFEUILLE_CLIENTS" not in _codes_donnees(
+        _donnees(creances_clients=PosteComptable(libelle="Cl", montant_n=40_000, variation_pct=-15.0))
+    )
 
 
 def test_masse_salariale_elevee():

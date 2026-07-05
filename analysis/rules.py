@@ -149,8 +149,9 @@ def detect_signals_from_donnees(d: DonneesFinancieres, ratios: Ratios) -> list[S
             levier="Prévoyance salariés, mutuelle collective, paie, épargne salariale",
         ))
 
-    if ca and d.charges_personnel.montant_n / ca * 100 > 60:
-        pct = d.charges_personnel.montant_n / ca * 100
+    pct_masse = d.charges_personnel.montant_n / ca * 100 if ca else 0
+    if pct_masse > 60:
+        pct = pct_masse
         signals.append(Signal(
             type=TypeSignal.RISQUE, gravite=Gravite.MOYENNE,
             code="MASSE_SALARIALE_ELEVEE",
@@ -169,8 +170,9 @@ def detect_signals_from_donnees(d: DonneesFinancieres, ratios: Ratios) -> list[S
         ))
 
     tn1 = d.tresorerie_actif.montant_n1
-    if tn1 and tn1 > 0 and (d.tresorerie_actif.montant_n - tn1) / tn1 * 100 > 20:
-        var = (d.tresorerie_actif.montant_n - tn1) / tn1 * 100
+    var_treso = (d.tresorerie_actif.montant_n - tn1) / tn1 * 100 if tn1 and tn1 > 0 else None
+    if var_treso is not None and var_treso > 20:
+        var = var_treso
         signals.append(Signal(
             type=TypeSignal.OPPORTUNITE, gravite=Gravite.FAIBLE,
             code="HAUSSE_TRESORERIE",
