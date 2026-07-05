@@ -230,3 +230,67 @@ def test_signals_sorted_by_severity_when_multiple():
     # Après tri, le premier signal devrait être de gravité ELEVEE
     signals_sorted = sorted(signals, key=lambda s: s.gravite, reverse=True)
     assert signals_sorted[0].gravite == Gravite.ELEVEE
+
+
+# ── Signaux basés sur montants absolus ────────────────────────────────────────
+
+from analysis.rules import detect_signals_from_donnees
+from analysis.ratios import compute_ratios
+
+
+def _codes_donnees(donnees):
+    return {s.code for s in detect_signals_from_donnees(donnees, compute_ratios(donnees))}
+
+
+def test_donnees_saine_emits_absolute_signals(donnees_saine):
+    codes = _codes_donnees(donnees_saine)
+    # CA 1M, tréso 200k>80k, CP 500k, salariés présents
+    assert "TRESORERIE_EXCEDENTAIRE" in codes
+    assert "PRESENCE_SALARIES" in codes
+    assert "RESULTAT_NET_ELEVE_RECURRENT" in codes  # RN 160k > 150k
+
+
+def test_masse_salariale_elevee():
+    from models import DonneesFinancieres, PosteComptable
+    d = DonneesFinancieres(
+        exercice_n=2024,
+        chiffre_affaires=PosteComptable(libelle="CA", montant_n=100_000),
+        achats_consommes=PosteComptable(libelle="A", montant_n=10_000),
+        charges_externes=PosteComptable(libelle="CE", montant_n=5_000),
+        charges_personnel=PosteComptable(libelle="CP", montant_n=70_000),  # 70% > 60%
+        ebe=PosteComptable(libelle="EBE", montant_n=15_000),
+        resultat_exploitation=PosteComptable(libelle="Rex", montant_n=10_000),
+        resultat_net=PosteComptable(libelle="RN", montant_n=8_000),
+        immobilisations_nettes=PosteComptable(libelle="Immo", montant_n=20_000),
+        stocks=PosteComptable(libelle="S", montant_n=5_000),
+        creances_clients=PosteComptable(libelle="Cl", montant_n=10_000),
+        tresorerie_actif=PosteComptable(libelle="T", montant_n=5_000),
+        capitaux_propres=PosteComptable(libelle="CP", montant_n=30_000),
+        dettes_financieres=PosteComptable(libelle="DF", montant_n=10_000),
+        dettes_fournisseurs=PosteComptable(libelle="Fo", montant_n=5_000),
+    )
+    codes = {s.code for s in detect_signals_from_donnees(d, compute_ratios(d))}
+    assert "MASSE_SALARIALE_ELEVEE" in codes
+    assert "PRESENCE_SALARIES" in codes
+
+
+def test_hausse_tresorerie_variation():
+    from models import DonneesFinancieres, PosteComptable
+    d = DonneesFinancieres(
+        exercice_n=2024,
+        chiffre_affaires=PosteComptable(libelle="CA", montant_n=500_000),
+        achats_consommes=PosteComptable(libelle="A", montant_n=200_000),
+        charges_externes=PosteComptable(libelle="CE", montant_n=50_000),
+        charges_personnel=PosteComptable(libelle="CP", montant_n=100_000),
+        ebe=PosteComptable(libelle="EBE", montant_n=100_000),
+        resultat_exploitation=PosteComptable(libelle="Rex", montant_n=80_000),
+        resultat_net=PosteComptable(libelle="RN", montant_n=60_000),
+        immobilisations_nettes=PosteComptable(libelle="Immo", montant_n=100_000),
+        stocks=PosteComptable(libelle="S", montant_n=20_000),
+        creances_clients=PosteComptable(libelle="Cl", montant_n=40_000),
+        tresorerie_actif=PosteComptable(libelle="T", montant_n=150_000, montant_n1=100_000),  # +50%
+        capitaux_propres=PosteComptable(libelle="CP", montant_n=200_000),
+        dettes_financieres=PosteComptable(libelle="DF", montant_n=50_000),
+        dettes_fournisseurs=PosteComptable(libelle="Fo", montant_n=30_000),
+    )
+    assert "HAUSSE_TRESORERIE" in {s.code for s in detect_signals_from_donnees(d, compute_ratios(d))}
