@@ -116,6 +116,7 @@ def _count_features(df: pd.DataFrame):
     else:
         journaux = []
 
+    # mois = mois-avec-activité présents dans le FEC (pas forcément 12 mois calendaires)
     if "EcritureDate" in df.columns:
         mois = sorted({
             str(d)[:6] for d in df["EcritureDate"].astype(str).str.strip()

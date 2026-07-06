@@ -95,6 +95,8 @@ class CountSpec(NamedTuple):
 COUNT_SIGNALS: dict[str, CountSpec] = {
     "EMPRUNTS_MULTIPLES": CountSpec("nb_comptes", ["164"], 3, O, F,
         "Emprunts multiples", "Recherche de financement, restructuration de dette"),
+    # Heuristique : sous-comptes distincts sous 213 = biens distincts. Risque de faux positif
+    # si un même bien est éclaté (2131 bâtiment / 2135 agencements / 2138 infra). À affiner si besoin.
     "MULTI_BIENS_IMMOBILIERS": CountSpec("nb_comptes", ["213"], 2, O, F,
         "Multi-biens immobiliers", "Gestion de SCI, gestion de portefeuille investisseurs"),
     "PARC_VEHICULES_IMPORTANT": CountSpec("nb_comptes", ["2182"], 5, C, F,

@@ -294,3 +294,29 @@ def test_volume_facturation_recues():
 def test_volume_facturation_non_declenche():
     rows = [("700000", 0, 100, "20240115", "", "VE") for _ in range(10)]
     assert "VOLUME_FACTURATION_ELEVE" not in _codesx(_dfx(rows))
+
+
+def test_multi_biens_immobiliers():
+    df = _dfx([("213100", 100000, 0, "20240101", "", "OD"),
+               ("213200", 80000, 0, "20240101", "", "OD")])   # 2 sous-comptes → 2 biens
+    assert "MULTI_BIENS_IMMOBILIERS" in _codesx(df)
+    df1 = _dfx([("213100", 100000, 0, "20240101", "", "OD")])  # 1 bien
+    assert "MULTI_BIENS_IMMOBILIERS" not in _codesx(df1)
+
+
+def test_parc_vehicules_important():
+    rows = [(f"21820{i}", 20000, 0, "20240101", "", "OD") for i in range(5)]  # 5 véhicules
+    assert "PARC_VEHICULES_IMPORTANT" in _codesx(_dfx(rows))
+    rows4 = [(f"21820{i}", 20000, 0, "20240101", "", "OD") for i in range(4)]  # 4
+    assert "PARC_VEHICULES_IMPORTANT" not in _codesx(_dfx(rows4))
+
+
+def test_acomptes_frequents_borne():
+    rows = [("419100", 100, 0, f"202401{d:02}", "", "VE") for d in range(1, 5)]  # 4 < 5
+    assert "ACOMPTES_FREQUENTS" not in _codesx(_dfx(rows))
+
+
+def test_complexite_comptable_borne():
+    rows = [("600000", 1, 0, "20240101", "", jc) for jc in
+            ["AC", "VE", "BQ", "OD", "OI", "SA", "AN"]]  # 7 < 8
+    assert "COMPLEXITE_COMPTABLE" not in _codesx(_dfx(rows))
