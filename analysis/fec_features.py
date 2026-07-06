@@ -32,6 +32,11 @@ class IndicateursFEC(BaseModel):
     debit_n1: dict[str, float] = Field(default_factory=dict)
     credit_n1: dict[str, float] = Field(default_factory=dict)
     ca_n: float = 0.0
+    comptes: list[str] = Field(default_factory=list)
+    paires_tiers: list[list[str]] = Field(default_factory=list)
+    nb_ecritures_par_compte: dict[str, int] = Field(default_factory=dict)
+    journaux: list[str] = Field(default_factory=list)
+    mois: list[str] = Field(default_factory=list)
 
     def _agg(self, prefixes: list[str], *, n1: bool) -> tuple[float, float]:
         debit = self.debit_n1 if n1 else self.debit_n
@@ -64,6 +69,57 @@ class IndicateursFEC(BaseModel):
             return None
         return round(self.solde(num, sens_num) / d * 100, 1)
 
+    def nb_comptes(self, prefixes: list[str]) -> int:
+        pref = tuple(prefixes)
+        return sum(1 for c in self.comptes if c.startswith(pref))
+
+    def nb_tiers(self, prefixes: list[str]) -> int:
+        pref = tuple(prefixes)
+        keys = set()
+        for compte, aux in self.paires_tiers:
+            if compte.startswith(pref):
+                keys.add(aux if aux else compte)
+        return len(keys)
+
+    def nb_ecritures(self, prefixes: list[str]) -> int:
+        pref = tuple(prefixes)
+        return sum(v for k, v in self.nb_ecritures_par_compte.items() if k.startswith(pref))
+
+    def nb_journaux(self) -> int:
+        return len(self.journaux)
+
+    def nb_mois(self) -> int:
+        return max(1, len(self.mois))
+
+
+def _count_features(df: pd.DataFrame):
+    cn = df["CompteNum"].astype(str)
+    comptes = sorted(cn.unique().tolist())
+    nb_ecritures_par_compte = {k: int(v) for k, v in cn.value_counts().to_dict().items()}
+
+    if "CompAuxNum" in df.columns:
+        aux = df["CompAuxNum"].astype(str).str.strip()
+        aux = aux.where(~aux.str.lower().isin(["nan", "none"]), "")
+    else:
+        aux = pd.Series([""] * len(df), index=df.index)
+    paires_tiers = sorted({(c, a) for c, a in zip(cn, aux)})
+    paires_tiers = [[c, a] for c, a in paires_tiers]
+
+    if "JournalCode" in df.columns:
+        journaux = sorted(
+            j for j in df["JournalCode"].astype(str).str.strip().unique()
+            if j and j.lower() not in ("nan", "none")
+        )
+    else:
+        journaux = []
+
+    if "EcritureDate" in df.columns:
+        mois = sorted({str(d)[:6] for d in df["EcritureDate"].astype(str) if str(d)[:6].strip()})
+    else:
+        mois = []
+
+    return comptes, paires_tiers, nb_ecritures_par_compte, journaux, mois
+
 
 def compute_fec_features(df: pd.DataFrame, df_n1: pd.DataFrame | None = None) -> IndicateursFEC:
     debit_n, credit_n = _sums_by_account(df)
@@ -71,9 +127,13 @@ def compute_fec_features(df: pd.DataFrame, df_n1: pd.DataFrame | None = None) ->
     if df_n1 is not None:
         debit_n1, credit_n1 = _sums_by_account(df_n1)
 
+    comptes, paires_tiers, nb_ecr, journaux, mois = _count_features(df)
+
     feat = IndicateursFEC(
         debit_n=debit_n, credit_n=credit_n,
         debit_n1=debit_n1, credit_n1=credit_n1,
+        comptes=comptes, paires_tiers=paires_tiers,
+        nb_ecritures_par_compte=nb_ecr, journaux=journaux, mois=mois,
     )
     feat.ca_n = feat.solde(["70"], "C")
     return feat

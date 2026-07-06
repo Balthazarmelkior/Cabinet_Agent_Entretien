@@ -86,3 +86,69 @@ def test_colonnes_manquantes_leve():
     df = pd.DataFrame([{"CompteNum": "706000", "EcritureDate": "20240630"}])
     with pytest.raises(ValueError, match="FEC illisible"):
         compute_fec_features(df)
+
+
+def _dfx(rows):
+    # rows: (CompteNum, Debit, Credit, EcritureDate, CompAuxNum, JournalCode)
+    return pd.DataFrame([
+        {"CompteNum": c, "Debit": d, "Credit": cr, "EcritureDate": dt,
+         "CompAuxNum": aux, "JournalCode": jc}
+        for c, d, cr, dt, aux, jc in rows
+    ])
+
+
+def test_nb_comptes_sous_comptes_distincts():
+    f = compute_fec_features(_dfx([
+        ("164100", 0, 10000, "20240101", "", "OD"),
+        ("164200", 0, 20000, "20240101", "", "OD"),
+        ("164200", 0, 5000, "20240201", "", "OD"),
+        ("512000", 100, 0, "20240101", "", "BQ"),
+    ]))
+    assert f.nb_comptes(["164"]) == 2
+    assert f.nb_comptes(["213"]) == 0
+
+
+def test_nb_tiers_via_compauxnum():
+    f = compute_fec_features(_dfx([
+        ("401000", 0, 100, "20240101", "F001", "AC"),
+        ("401000", 0, 200, "20240102", "F002", "AC"),
+        ("401000", 0, 300, "20240103", "F003", "AC"),
+        ("401000", 0, 300, "20240104", "F003", "AC"),
+    ]))
+    assert f.nb_tiers(["401"]) == 3
+
+
+def test_nb_tiers_repli_sous_compte_si_aux_vide():
+    f = compute_fec_features(_dfx([
+        ("401100", 0, 100, "20240101", "", "AC"),
+        ("401200", 0, 200, "20240102", "", "AC"),
+    ]))
+    assert f.nb_tiers(["401"]) == 2
+
+
+def test_nb_ecritures_et_journaux_et_mois():
+    f = compute_fec_features(_dfx([
+        ("419100", 500, 0, "20240115", "", "VE"),
+        ("419100", 300, 0, "20240210", "", "VE"),
+        ("700000", 0, 1000, "20240115", "", "VE"),
+        ("600000", 800, 0, "20240310", "", "AC"),
+    ]))
+    assert f.nb_ecritures(["4191"]) == 2
+    assert f.nb_journaux() == 2
+    assert f.nb_mois() == 3
+
+
+def test_comptage_colonnes_absentes_renvoie_zero():
+    f = compute_fec_features(pd.DataFrame([
+        {"CompteNum": "401100", "Debit": 0, "Credit": 100, "EcritureDate": "20240101"},
+    ]))
+    assert f.nb_tiers(["401"]) == 1
+    assert f.nb_journaux() == 0
+    assert f.nb_mois() == 1
+
+
+def test_nb_mois_minimum_un_sur_df_vide_de_dates():
+    f = compute_fec_features(pd.DataFrame([
+        {"CompteNum": "700000", "Debit": 0, "Credit": 1000, "EcritureDate": ""},
+    ]))
+    assert f.nb_mois() == 1
