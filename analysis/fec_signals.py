@@ -2,7 +2,7 @@
 """Détection des signaux famille A depuis IndicateursFEC (moteur hybride)."""
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 from models import Signal, TypeSignal, Gravite
 from analysis.fec_features import IndicateursFEC
@@ -38,6 +38,8 @@ GENERIC_SIGNALS: dict[str, GenericSpec] = {
         "Frais administratifs élevés", "Assistanat administratif externalisé"),
     "REVENUS_LOCATIFS_ELEVES": GenericSpec("seuil_eur", ["706", "708"], "C", 30000, O, F,
         "Revenus locatifs élevés", "Comptabilité LMNP, structuration SCI, assurance PNO"),
+    "SEUIL_TVA_MICRO_DEPASSE": GenericSpec("seuil_eur", ["70"], "C", 77000, C, M,
+        "Seuil de TVA/micro dépassé", "Accompagnement changement de régime fiscal (réel, franchise)"),
     "PATRIMOINE_IMMO_IMPORTANT": GenericSpec("seuil_eur", ["213", "214"], "D", 300000, O, F,
         "Patrimoine immobilier important", "Gestion de portefeuille investisseurs, transmission"),
     "CA_LOCATIF_CONSOLIDE_ELEVE": GenericSpec("seuil_eur", ["706", "708"], "C", 80000, O, F,
@@ -113,7 +115,7 @@ COUNT_SIGNALS: dict[str, CountSpec] = {
 def seuils_parametrables(referentiel: dict) -> dict[str, float]:
     """code -> seuil défaut, pour les signaux GENERIC + COUNT parametrable:true."""
     out: dict[str, float] = {}
-    for table in (GENERIC_SIGNALS, COUNT_SIGNALS):
+    for table in (GENERIC_SIGNALS, COUNT_SIGNALS, PARAM_SIGNALS):
         for code in table:
             ref = referentiel.get(code, {})
             if ref.get("parametrable") and ref.get("seuil_valeur") is not None:
@@ -127,6 +129,8 @@ def titre_signal(code: str) -> str:
         return GENERIC_SIGNALS[code].titre
     if code in COUNT_SIGNALS:
         return COUNT_SIGNALS[code].titre
+    if code in PARAM_SIGNALS:
+        return PARAM_SIGNALS[code].titre
     return code
 
 
@@ -351,6 +355,14 @@ def _volume_facturation(f: IndicateursFEC) -> Signal | None:
                 "Externalisation de la facturation électronique, formation facture électronique")
 
 
+def _frais_transport_eleves(f: IndicateursFEC) -> Signal | None:
+    if f.solde(["6241", "6242"], "D") < 10000 and f.nb_ecritures(["6241", "6242"]) <= 50:
+        return None
+    return _sig("FRAIS_TRANSPORT_ELEVES", C, F, "Frais de transport élevés",
+                "Frais de transport ≥ 10 000 € ou > 50 écritures/an.",
+                "Flotte automobile (assurance), optimisation logistique")
+
+
 _EXPLICIT_DETECTORS = [
     _charges_sociales_elevees, _ratio_dividendes_eleve, _charges_sociales_perso_elevees,
     _amortissements_avances, _compte_courant_crediteur_eleve, _absence_interessement,
@@ -359,7 +371,78 @@ _EXPLICIT_DETECTORS = [
     _frais_financiers_en_hausse, _frais_bancaires_en_hausse, _hausse_immobilisations,
     _honoraires_exceptionnels_en_hausse, _variation_remuneration_dirigeant,
     _augmentation_capital, _resultat_bnc_eleve, _volume_facturation,
+    _frais_transport_eleves,
 ]
+
+
+# --- Détecteurs composites paramétrables (seuil éditable dans l'UI) ---
+class ParamSpec(NamedTuple):
+    fn: Callable[[IndicateursFEC, float], "Signal | None"]
+    seuil_defaut: float
+    titre: str
+
+
+def _a_un_n1(f: IndicateursFEC) -> bool:
+    return bool(f.debit_n1 or f.credit_n1)
+
+
+def _investissement_recent(f: IndicateursFEC, seuil: float) -> Signal | None:
+    if not _a_un_n1(f):
+        return None
+    delta = f.solde(["20", "21", "23"], "D") - f.solde(["20", "21", "23"], "D", n1=True)
+    if delta < seuil:
+        return None
+    return _sig("INVESTISSEMENT_RECENT", O, F, "Investissement récent",
+                f"Immobilisations : +{delta:,.0f} € vs N-1 (seuil {seuil:,.0f} €).",
+                "Recherche de financement, garantie emprunteur, assurance des actifs")
+
+
+def _nouvel_emprunt(f: IndicateursFEC, seuil: float) -> Signal | None:
+    if not _a_un_n1(f):
+        return None
+    delta = f.solde(["164"], "C") - f.solde(["164"], "C", n1=True)
+    if delta < seuil:
+        return None
+    return _sig("NOUVEL_EMPRUNT", O, F, "Nouvel emprunt",
+                f"Emprunts (164) : +{delta:,.0f} € vs N-1 (seuil {seuil:,.0f} €).",
+                "Recherche de financement, garantie, assurance emprunteur")
+
+
+def _baisse_marge_brute(f: IndicateursFEC, seuil: float) -> Signal | None:
+    if not _a_un_n1(f):
+        return None
+    ca_n, ca_n1 = f.solde(["70"], "C"), f.solde(["70"], "C", n1=True)
+    if ca_n <= 0 or ca_n1 <= 0:
+        return None
+    marge_n = (ca_n - f.solde(["60"], "D")) / ca_n * 100
+    marge_n1 = (ca_n1 - f.solde(["60"], "D", n1=True)) / ca_n1 * 100
+    baisse = marge_n1 - marge_n
+    if baisse < seuil:
+        return None
+    return _sig("BAISSE_MARGE_BRUTE", R, M, "Baisse de la marge brute",
+                f"Marge brute : {marge_n:.0f}% vs {marge_n1:.0f}% N-1 "
+                f"(−{baisse:.0f} pts, seuil {seuil:.0f}).",
+                "Analyse de rentabilité, contrôle de gestion, politique de prix")
+
+
+def _delai_facturation_long(f: IndicateursFEC, seuil: float) -> Signal | None:
+    ca = f.solde(["70"], "C")
+    if ca <= 0:
+        return None
+    dso = f.solde(["411"], "D") / ca * 365
+    if dso <= seuil:
+        return None
+    return _sig("DELAI_FACTURATION_LONG", X, F, "Délai de facturation long",
+                f"Encours clients ≈ {dso:.0f} jours de CA (seuil {seuil:.0f} j).",
+                "Optimisation du cycle de facturation, relance et recouvrement")
+
+
+PARAM_SIGNALS: dict[str, ParamSpec] = {
+    "INVESTISSEMENT_RECENT": ParamSpec(_investissement_recent, 50000, "Investissement récent"),
+    "NOUVEL_EMPRUNT": ParamSpec(_nouvel_emprunt, 50000, "Nouvel emprunt"),
+    "BAISSE_MARGE_BRUTE": ParamSpec(_baisse_marge_brute, 5, "Baisse de la marge brute"),
+    "DELAI_FACTURATION_LONG": ParamSpec(_delai_facturation_long, 15, "Délai de facturation long"),
+}
 
 
 def detect_signals_from_fec(feat: IndicateursFEC, seuils_overrides: dict[str, float] | None = None) -> list[Signal]:
@@ -375,6 +458,11 @@ def detect_signals_from_fec(feat: IndicateursFEC, seuils_overrides: dict[str, fl
             signals.append(sig)
     for detector in _EXPLICIT_DETECTORS:
         sig = detector(feat)
+        if sig is not None:
+            signals.append(sig)
+    for code, spec in PARAM_SIGNALS.items():
+        seuil = float(overrides.get(code, spec.seuil_defaut))
+        sig = spec.fn(feat, seuil)
         if sig is not None:
             signals.append(sig)
     return signals

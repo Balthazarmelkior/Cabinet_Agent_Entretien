@@ -281,6 +281,33 @@ def test_fournisseurs_drive_facture_electronique(catalogue_path, donnees_saine):
     assert "MISSION_COMPTA_FX_MISE_EN_PLACE" in ids
 
 
+def test_quickwins_signals_drive_missions(catalogue_path, donnees_saine):
+    """Un FEC synthétique déclenche des signaux quick-wins (2c) qui pilotent
+    les missions catalogue correspondantes."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    df = pd.DataFrame([
+        {"CompteNum": "706000", "Debit": 0, "Credit": 365000, "EcritureDate": "20240630"},
+        {"CompteNum": "411000", "Debit": 30000, "Credit": 0, "EcritureDate": "20240630"},  # DSO 30j
+    ])
+    feat = compute_fec_features(df)
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    codes = {sig.code for sig in s["signaux_detectes"]}
+    assert {"DELAI_FACTURATION_LONG", "SEUIL_TVA_MICRO_DEPASSE"} <= codes
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_COMPTA_FX_EXTERNALISATION" in ids           # délai facturation long
+    assert "MISSION_AVOCATS_CREATION" in ids                    # seuil TVA/micro
+
+
 # ── Tests de robustesse ────────────────────────────────────────────────────────
 
 def test_unsupported_file_format_raises_value_error():

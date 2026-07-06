@@ -335,3 +335,119 @@ def test_titre_signal_resout_les_deux_tables():
     assert titre_signal("REMUNERATION_DIRIGEANT_ELEVEE")
     assert titre_signal("EMPRUNTS_MULTIPLES") == "Emprunts multiples"
     assert titre_signal("CODE_INCONNU") == "CODE_INCONNU"
+
+
+# ── Phase 2c : quick wins agrégats ───────────────────────────────────────────
+# T1 — SEUIL_TVA_MICRO_DEPASSE (GENERIC seuil_eur)
+def test_seuil_tva_micro_declenche():
+    assert "SEUIL_TVA_MICRO_DEPASSE" in _codes(_df([("706000", 0, 80000, "20240630")]))
+
+
+def test_seuil_tva_micro_borne():
+    assert "SEUIL_TVA_MICRO_DEPASSE" not in _codes(_df([("706000", 0, 70000, "20240630")]))
+
+
+def test_seuil_tva_micro_override():
+    df = _df([("706000", 0, 40000, "20240630")])
+    assert "SEUIL_TVA_MICRO_DEPASSE" in _codes(df, overrides={"SEUIL_TVA_MICRO_DEPASSE": 30000})
+
+
+# T2 — FRAIS_TRANSPORT_ELEVES (explicit, montant OU nombre)
+def test_frais_transport_via_montant():
+    assert "FRAIS_TRANSPORT_ELEVES" in _codes(_df([("624100", 10000, 0, "20240131")]))
+
+
+def test_frais_transport_non_declenche():
+    rows = [("624100", 500, 0, f"202401{d:02}") for d in range(1, 11)]  # 5000 €, 10 écritures
+    assert "FRAIS_TRANSPORT_ELEVES" not in _codes(_df(rows))
+
+
+def test_frais_transport_via_nombre():
+    rows = [("624200", 20, 0, f"2024{m:02}{d:02}") for m in range(1, 7) for d in range(1, 11)]
+    # 60 écritures, 1200 € : déclenche par le nombre
+    assert "FRAIS_TRANSPORT_ELEVES" in _codes(_df(rows))
+
+
+# T3 — INVESTISSEMENT_RECENT (PARAM, delta N/N-1)
+def test_investissement_recent_declenche():
+    df = _df([("215000", 60000, 0, "20240601")])
+    df_n1 = _df([("606000", 1000, 0, "20230101")])  # N-1 présent, pas d'immo
+    assert "INVESTISSEMENT_RECENT" in _codes(df, df_n1)
+
+
+def test_investissement_recent_sans_n1():
+    assert "INVESTISSEMENT_RECENT" not in _codes(_df([("215000", 60000, 0, "20240601")]))
+
+
+def test_investissement_recent_override():
+    df = _df([("215000", 30000, 0, "20240601")])
+    df_n1 = _df([("606000", 1000, 0, "20230101")])
+    assert "INVESTISSEMENT_RECENT" not in _codes(df, df_n1)
+    assert "INVESTISSEMENT_RECENT" in _codes(df, df_n1, overrides={"INVESTISSEMENT_RECENT": 25000})
+
+
+# T4 — NOUVEL_EMPRUNT (PARAM, delta 164/C N/N-1)
+def test_nouvel_emprunt_declenche():
+    df = _df([("164000", 0, 60000, "20240301")])
+    df_n1 = _df([("606000", 1000, 0, "20230101")])
+    assert "NOUVEL_EMPRUNT" in _codes(df, df_n1)
+
+
+def test_nouvel_emprunt_stable():
+    df = _df([("164000", 0, 60000, "20240301")])
+    df_n1 = _df([("164000", 0, 60000, "20230301")])  # même solde -> pas de nouvel emprunt
+    assert "NOUVEL_EMPRUNT" not in _codes(df, df_n1)
+
+
+def test_nouvel_emprunt_sans_n1():
+    assert "NOUVEL_EMPRUNT" not in _codes(_df([("164000", 0, 60000, "20240301")]))
+
+
+# T5 — BAISSE_MARGE_BRUTE (PARAM, marge points N/N-1)
+def _df_marge(ca, achats, dt):
+    return _df([("706000", 0, ca, dt), ("607000", achats, 0, dt)])
+
+
+def test_baisse_marge_declenche():
+    df = _df_marge(100000, 60000, "20240630")     # marge 40 %
+    df_n1 = _df_marge(100000, 50000, "20230630")  # marge 50 % -> baisse 10 pts
+    assert "BAISSE_MARGE_BRUTE" in _codes(df, df_n1)
+
+
+def test_baisse_marge_faible():
+    df = _df_marge(100000, 53000, "20240630")     # marge 47 %
+    df_n1 = _df_marge(100000, 50000, "20230630")  # marge 50 % -> baisse 3 pts < 5
+    assert "BAISSE_MARGE_BRUTE" not in _codes(df, df_n1)
+
+
+def test_baisse_marge_sans_n1():
+    assert "BAISSE_MARGE_BRUTE" not in _codes(_df_marge(100000, 60000, "20240630"))
+
+
+# T6 — DELAI_FACTURATION_LONG (PARAM, DSO)
+def test_delai_facturation_long_declenche():
+    df = _df([("411000", 30000, 0, "20240630"), ("706000", 0, 365000, "20240630")])  # DSO 30 j
+    assert "DELAI_FACTURATION_LONG" in _codes(df)
+
+
+def test_delai_facturation_court():
+    df = _df([("411000", 10000, 0, "20240630"), ("706000", 0, 365000, "20240630")])  # DSO 10 j
+    assert "DELAI_FACTURATION_LONG" not in _codes(df)
+
+
+def test_delai_facturation_ca_nul():
+    df = _df([("411000", 30000, 0, "20240630")])  # pas de CA -> pas de division
+    assert "DELAI_FACTURATION_LONG" not in _codes(df)
+
+
+# T7 — seuils paramétrables couvrent les codes PARAM
+def test_seuils_parametrables_inclut_param_signals():
+    params = seuils_parametrables(SEUILS)
+    for code in ["INVESTISSEMENT_RECENT", "NOUVEL_EMPRUNT", "BAISSE_MARGE_BRUTE",
+                 "DELAI_FACTURATION_LONG"]:
+        assert code in params
+
+
+def test_titre_signal_resout_param_signals():
+    from analysis.fec_signals import titre_signal
+    assert titre_signal("BAISSE_MARGE_BRUTE") != "BAISSE_MARGE_BRUTE"
