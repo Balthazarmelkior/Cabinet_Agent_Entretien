@@ -74,6 +74,8 @@ class IndicateursFEC(BaseModel):
         return sum(1 for c in self.comptes if c.startswith(pref))
 
     def nb_tiers(self, prefixes: list[str]) -> int:
+        """Tiers distincts sous le(s) préfixe(s) : CompAuxNum si renseigné, sinon le
+        sous-compte lui-même (repli quand la compta auxiliaire n'est pas tenue)."""
         pref = tuple(prefixes)
         keys = set()
         for compte, aux in self.paires_tiers:
@@ -95,6 +97,7 @@ class IndicateursFEC(BaseModel):
 def _count_features(df: pd.DataFrame):
     cn = df["CompteNum"].astype(str)
     comptes = sorted(cn.unique().tolist())
+    # nombre de LIGNES d'écriture par compte (proxy volume ; ACOMPTES = lignes/an au référentiel)
     nb_ecritures_par_compte = {k: int(v) for k, v in cn.value_counts().to_dict().items()}
 
     if "CompAuxNum" in df.columns:
@@ -114,7 +117,10 @@ def _count_features(df: pd.DataFrame):
         journaux = []
 
     if "EcritureDate" in df.columns:
-        mois = sorted({str(d)[:6] for d in df["EcritureDate"].astype(str) if str(d)[:6].strip()})
+        mois = sorted({
+            str(d)[:6] for d in df["EcritureDate"].astype(str).str.strip()
+            if str(d)[:6] and str(d)[:6].lower() not in ("nan", "none")
+        })
     else:
         mois = []
 

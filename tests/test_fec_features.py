@@ -152,3 +152,31 @@ def test_nb_mois_minimum_un_sur_df_vide_de_dates():
         {"CompteNum": "700000", "Debit": 0, "Credit": 1000, "EcritureDate": ""},
     ]))
     assert f.nb_mois() == 1
+
+
+def test_nb_mois_ignore_dates_nan():
+    import numpy as np
+    df = pd.DataFrame([
+        {"CompteNum": "700000", "Debit": 0, "Credit": 1000, "EcritureDate": "20240115"},
+        {"CompteNum": "700000", "Debit": 0, "Credit": 500,  "EcritureDate": np.nan},
+    ])
+    f = compute_fec_features(df)
+    assert f.nb_mois() == 1   # le NaN ne crée pas de faux mois
+
+
+def test_nb_ecritures_somme_plusieurs_sous_comptes():
+    f = compute_fec_features(_dfx([
+        ("607100", 1, 0, "20240101", "", "AC"),
+        ("607200", 1, 0, "20240102", "", "AC"),
+        ("607200", 1, 0, "20240103", "", "AC"),
+    ]))
+    assert f.nb_ecritures(["607"]) == 3   # somme sur 2 sous-comptes
+
+
+def test_nb_tiers_aux_partage_entre_sous_comptes():
+    # même CompAuxNum sur 2 sous-comptes différents → 1 tier
+    f = compute_fec_features(_dfx([
+        ("401100", 0, 100, "20240101", "F001", "AC"),
+        ("401200", 0, 200, "20240102", "F001", "AC"),
+    ]))
+    assert f.nb_tiers(["401"]) == 1
