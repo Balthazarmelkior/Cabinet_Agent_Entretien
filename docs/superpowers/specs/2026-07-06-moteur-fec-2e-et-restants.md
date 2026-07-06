@@ -22,15 +22,19 @@ la comparaison de comptes est fiable.
 | `DIVIDENDES_RECURRENTS` | Besoin de **3 exercices** (N, N-1, N-2) — le pipeline charge au plus N-1 | 3e FEC ou historique |
 | `BALANCE_AGEE_DEGRADEE` | Besoin des **dates d'échéance** clients (aging) — absentes du FEC standard | Balance âgée dédiée |
 | `ABSENCE_COMPTABILITE_ANALYTIQUE` | Détection « pas d'analytique » floue (pas de marqueur FEC fiable) | Question manuelle |
-| `DEPASSEMENT_SEUILS_CAC` | Besoin de l'**effectif** (50 salariés) — hors FEC | `donnees.effectif` (déjà saisi) → règle dédiée possible |
+| ~~`DEPASSEMENT_SEUILS_CAC`~~ | **LIVRÉ hors-FEC** (voir ci-dessous) | règle `detect_signals_from_donnees` |
+
+## `DEPASSEMENT_SEUILS_CAC` (livré, hors moteur FEC)
+
+Règle ajoutée à `analysis/rules.py::detect_signals_from_donnees` : signal émis si
+**2 des 3 seuils** sont dépassés — CA > 8 M€, total bilan > 4 M€ (proxy = Σ postes
+d'actif : immo nettes + stocks + créances clients + trésorerie), effectif > 50
+(`d.effectif or 0`, donc effectif inconnu ne compte pas). Type CONFORMITÉ, gravité
+ÉLEVÉE → `MISSION_AUDIT_CAC`. Aucun besoin de FEC.
 
 ## Conclusion
 
-Le moteur FEC déterministe plafonne à **83/90** sur données FEC (N + N-1). Les 7
-restants nécessitent une donnée hors périmètre (effectif, N-2, échéances, montant
-d'origine) ou relèvent d'une détection qualitative (LLM) ou d'une saisie manuelle
-en entretien — à traiter hors du moteur FEC numérique.
-
-Piste rapide hors-FEC : `DEPASSEMENT_SEUILS_CAC` est calculable depuis
-`donnees.effectif` + CA + total bilan (déjà dans `DonneesFinancieres`) via une
-règle dans `analysis/rules.py` (`detect_signals_from_donnees`), sans FEC.
+Le moteur FEC déterministe plafonne à **83/90** sur données FEC ; +1 hors-FEC
+(`DEPASSEMENT_SEUILS_CAC`) → **84/90**. Les 6 restants nécessitent une donnée hors
+périmètre (N-2, échéances, montant d'origine d'emprunt) ou relèvent d'une
+détection qualitative (LLM) / d'une saisie manuelle en entretien.

@@ -247,4 +247,17 @@ def detect_signals_from_donnees(d: DonneesFinancieres, ratios: Ratios) -> list[S
             levier="Assistanat commercial, diagnostic commercial, relance de la prospection",
         ))
 
+    total_bilan = (d.immobilisations_nettes.montant_n + d.stocks.montant_n
+                   + d.creances_clients.montant_n + d.tresorerie_actif.montant_n)
+    seuils_depasses = sum([ca > 8_000_000, total_bilan > 4_000_000, (d.effectif or 0) > 50])
+    if seuils_depasses >= 2:
+        signals.append(Signal(
+            type=TypeSignal.CONFORMITE, gravite=Gravite.ELEVEE,
+            code="DEPASSEMENT_SEUILS_CAC",
+            titre="Seuils de nomination d'un CAC dépassés",
+            description=f"{seuils_depasses} des 3 seuils dépassés (CA 8 M€ / bilan 4 M€ / 50 salariés) : "
+                        "nomination d'un commissaire aux comptes potentiellement obligatoire.",
+            levier="Accompagnement à la nomination d'un CAC, audit légal, sécurisation juridique",
+        ))
+
     return signals

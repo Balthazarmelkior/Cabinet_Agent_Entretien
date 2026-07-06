@@ -405,3 +405,30 @@ def test_hausse_tresorerie_variation():
         dettes_fournisseurs=PosteComptable(libelle="Fo", montant_n=30_000),
     )
     assert "HAUSSE_TRESORERIE" in {s.code for s in detect_signals_from_donnees(d, compute_ratios(d))}
+
+
+# ── DEPASSEMENT_SEUILS_CAC (2 des 3 seuils : CA 8M / bilan 4M / 50 salariés) ──
+from models import PosteComptable
+
+
+def test_cac_deux_seuils_ca_et_bilan():
+    d = _donnees(
+        chiffre_affaires=PosteComptable(libelle="CA", montant_n=9_000_000),
+        immobilisations_nettes=PosteComptable(libelle="Immo", montant_n=5_000_000),
+    )
+    assert "DEPASSEMENT_SEUILS_CAC" in _codes_donnees(d)
+
+
+def test_cac_un_seul_seuil_pas_de_signal():
+    d = _donnees(chiffre_affaires=PosteComptable(libelle="CA", montant_n=9_000_000))
+    assert "DEPASSEMENT_SEUILS_CAC" not in _codes_donnees(d)
+
+
+def test_cac_via_effectif():
+    d = _donnees(chiffre_affaires=PosteComptable(libelle="CA", montant_n=9_000_000), effectif=60)
+    assert "DEPASSEMENT_SEUILS_CAC" in _codes_donnees(d)
+
+
+def test_cac_effectif_absent_ne_compte_pas():
+    d = _donnees(chiffre_affaires=PosteComptable(libelle="CA", montant_n=9_000_000))  # effectif None
+    assert "DEPASSEMENT_SEUILS_CAC" not in _codes_donnees(d)
