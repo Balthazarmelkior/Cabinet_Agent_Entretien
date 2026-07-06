@@ -308,6 +308,33 @@ def test_quickwins_signals_drive_missions(catalogue_path, donnees_saine):
     assert "MISSION_AVOCATS_CREATION" in ids                    # seuil TVA/micro
 
 
+def test_monthly_signals_drive_missions(catalogue_path, donnees_saine):
+    """Un FEC synthétique 12 mois (découvert récurrent + CA saisonnier) déclenche
+    les signaux mensuels 2d et la mission prévisionnel de trésorerie."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    rows = []
+    for m in range(1, 13):
+        ca = 120000 if m % 2 else 10000                       # CA très saisonnier
+        rows.append({"CompteNum": "706000", "Debit": 0, "Credit": ca, "EcritureDate": f"2024{m:02}15"})
+        rows.append({"CompteNum": "519000", "Debit": 0, "Credit": 4000, "EcritureDate": f"2024{m:02}20"})
+    feat = compute_fec_features(pd.DataFrame(rows))
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    codes = {sig.code for sig in s["signaux_detectes"]}
+    assert {"DECOUVERT_RECURRENT", "SAISONNALITE_FORTE"} <= codes
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_PILOTAGE_PREVISIONNEL_TRESO" in ids
+
+
 # ── Tests de robustesse ────────────────────────────────────────────────────────
 
 def test_unsupported_file_format_raises_value_error():

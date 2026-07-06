@@ -196,3 +196,30 @@ def test_count_features_dtype_nullable_avec_na():
     assert f.nb_tiers(["401"]) == 2       # F001 + repli sous-compte 401000
     assert f.nb_journaux() == 1           # AC (le NA ignoré)
     assert f.nb_mois() == 3
+
+
+# ── Phase 2d : sommes mensuelles par compte ──────────────────────────────────
+def test_solde_mensuel_par_mois():
+    f = compute_fec_features(_df([
+        ("706000", 0, 50000, "20240115"),
+        ("706000", 0, 60000, "20240220"),
+        ("607000", 30000, 0, "20240115"),
+    ]))
+    ca = f.solde_mensuel(["70"], "C")
+    assert ca == {"202401": 50000, "202402": 60000}
+
+
+def test_solde_mensuel_cumule_ordonne():
+    f = compute_fec_features(_df([
+        ("519000", 0, 8000, "20240131"),
+        ("519000", 3000, 0, "20240228"),   # remboursement partiel
+        ("519000", 0, 5000, "20240331"),
+    ]))
+    cum = f.solde_mensuel_cumule(["519"], "C")
+    assert cum == {"202401": 8000, "202402": 5000, "202403": 10000}
+
+
+def test_solde_mensuel_sens_invalide():
+    f = compute_fec_features(_df([("706000", 0, 100, "20240115")]))
+    with pytest.raises(ValueError):
+        f.solde_mensuel(["70"], "X")

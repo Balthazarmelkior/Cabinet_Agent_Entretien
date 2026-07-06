@@ -451,3 +451,70 @@ def test_seuils_parametrables_inclut_param_signals():
 def test_titre_signal_resout_param_signals():
     from analysis.fec_signals import titre_signal
     assert titre_signal("BAISSE_MARGE_BRUTE") != "BAISSE_MARGE_BRUTE"
+
+
+# ── Phase 2d : signaux mensuels ──────────────────────────────────────────────
+# T2 — DECOUVERT_RECURRENT (explicit)
+def test_decouvert_recurrent_declenche():
+    rows = [("519000", 0, 5000, f"2024{m:02}15") for m in range(1, 4)]  # 3 mois créditeurs
+    assert "DECOUVERT_RECURRENT" in _codes(_df(rows))
+
+
+def test_decouvert_recurrent_deux_mois():
+    rows = [("519000", 0, 5000, f"2024{m:02}15") for m in range(1, 3)]  # 2 mois < 3
+    assert "DECOUVERT_RECURRENT" not in _codes(_df(rows))
+
+
+def test_decouvert_recurrent_solde_resorbe():
+    # crédit puis remboursement total le mois suivant -> cumulé <= 0 ensuite
+    rows = [("519000", 0, 5000, "20240115"), ("519000", 5000, 0, "20240215"),
+            ("519000", 5000, 0, "20240315")]
+    assert "DECOUVERT_RECURRENT" not in _codes(_df(rows))  # 1 seul mois > 0
+
+
+# T3 — SAISONNALITE_FORTE (PARAM)
+def _ca_mensuel(montants):
+    return _df([("706000", 0, m, f"2024{i+1:02}15") for i, m in enumerate(montants)])
+
+
+def test_saisonnalite_forte_declenche():
+    df = _ca_mensuel([100000, 10000] * 6)  # 12 mois très dispersés
+    assert "SAISONNALITE_FORTE" in _codes(df)
+
+
+def test_saisonnalite_ca_stable():
+    df = _ca_mensuel([50000] * 12)
+    assert "SAISONNALITE_FORTE" not in _codes(df)
+
+
+def test_saisonnalite_trop_peu_de_mois():
+    df = _ca_mensuel([100000, 0, 0, 100000])  # 4 mois < 6
+    assert "SAISONNALITE_FORTE" not in _codes(df)
+
+
+def test_saisonnalite_override_abaisse():
+    df = _ca_mensuel([50000] * 11 + [60000])  # CV ~5% < 30
+    assert "SAISONNALITE_FORTE" not in _codes(df)
+    assert "SAISONNALITE_FORTE" in _codes(df, overrides={"SAISONNALITE_FORTE": 3})
+
+
+def test_seuils_parametrables_inclut_saisonnalite():
+    assert "SAISONNALITE_FORTE" in seuils_parametrables(SEUILS)
+
+
+# ── Phase 2e : nouvelles activités (comptes 70x N vs N-1) ─────────────────────
+def test_nouvelles_activites_declenche():
+    df = _df([("706000", 0, 50000, "20240115"), ("707000", 0, 20000, "20240115")])
+    df_n1 = _df([("706000", 0, 40000, "20230115")])  # 707 est nouveau
+    assert "NOUVELLES_ACTIVITES" in _codes(df, df_n1)
+
+
+def test_nouvelles_activites_aucun_nouveau():
+    df = _df([("706000", 0, 50000, "20240115")])
+    df_n1 = _df([("706000", 0, 40000, "20230115")])
+    assert "NOUVELLES_ACTIVITES" not in _codes(df, df_n1)
+
+
+def test_nouvelles_activites_sans_n1():
+    df = _df([("706000", 0, 50000, "20240115"), ("707000", 0, 20000, "20240115")])
+    assert "NOUVELLES_ACTIVITES" not in _codes(df)

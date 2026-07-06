@@ -6,8 +6,8 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 
-def _sums_by_account(df: pd.DataFrame) -> tuple[dict[str, float], dict[str, float]]:
-    """Retourne (debit_par_compte, credit_par_compte) agrégés par CompteNum."""
+def _normalize_amounts(df: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """Retourne (comptes, debit, credit) normalisés, quel que soit le format FEC."""
     comptes = df["CompteNum"].astype(str)
     if "Debit" in df.columns and "Credit" in df.columns:
         debit = pd.to_numeric(df["Debit"], errors="coerce").fillna(0)
@@ -21,9 +21,33 @@ def _sums_by_account(df: pd.DataFrame) -> tuple[dict[str, float], dict[str, floa
         raise ValueError(
             "FEC illisible : colonnes attendues 'Debit'+'Credit' ou 'Montant'+'Sens'."
         )
+    return comptes, debit, credit
+
+
+def _sums_by_account(df: pd.DataFrame) -> tuple[dict[str, float], dict[str, float]]:
+    """Retourne (debit_par_compte, credit_par_compte) agrégés par CompteNum."""
+    comptes, debit, credit = _normalize_amounts(df)
     d = debit.groupby(comptes).sum().to_dict()
     c = credit.groupby(comptes).sum().to_dict()
     return {k: float(v) for k, v in d.items()}, {k: float(v) for k, v in c.items()}
+
+
+def _monthly_sums(df: pd.DataFrame) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]]:
+    """Retourne (debit_mensuel, credit_mensuel) : mois(YYYYMM) -> compte -> Σ.
+    Vide si la colonne EcritureDate est absente."""
+    if "EcritureDate" not in df.columns:
+        return {}, {}
+    comptes, debit, credit = _normalize_amounts(df)
+    mois = df["EcritureDate"].fillna("").astype(str).str.strip().str[:6]
+    valide = mois.str.fullmatch(r"\d{6}")
+    out_d: dict[str, dict[str, float]] = {}
+    out_c: dict[str, dict[str, float]] = {}
+    for serie, out in ((debit, out_d), (credit, out_c)):
+        grouped = serie[valide].groupby([mois[valide], comptes[valide]]).sum()
+        for (m, compte), montant in grouped.items():
+            if montant:
+                out.setdefault(m, {})[compte] = float(montant)
+    return out_d, out_c
 
 
 class IndicateursFEC(BaseModel):
@@ -33,10 +57,13 @@ class IndicateursFEC(BaseModel):
     credit_n1: dict[str, float] = Field(default_factory=dict)
     ca_n: float = 0.0
     comptes: list[str] = Field(default_factory=list)
+    comptes_n1: list[str] = Field(default_factory=list)
     paires_tiers: list[list[str]] = Field(default_factory=list)
     nb_ecritures_par_compte: dict[str, int] = Field(default_factory=dict)
     journaux: list[str] = Field(default_factory=list)
     mois: list[str] = Field(default_factory=list)
+    debit_mensuel: dict[str, dict[str, float]] = Field(default_factory=dict)
+    credit_mensuel: dict[str, dict[str, float]] = Field(default_factory=dict)
 
     def _agg(self, prefixes: list[str], *, n1: bool) -> tuple[float, float]:
         debit = self.debit_n1 if n1 else self.debit_n
@@ -93,6 +120,31 @@ class IndicateursFEC(BaseModel):
     def nb_mois(self) -> int:
         return max(1, len(self.mois))
 
+    def _agg_mensuel(self, prefixes: list[str], mois: str) -> tuple[float, float]:
+        pref = tuple(prefixes)
+        d = sum(v for k, v in self.debit_mensuel.get(mois, {}).items() if k.startswith(pref))
+        c = sum(v for k, v in self.credit_mensuel.get(mois, {}).items() if k.startswith(pref))
+        return d, c
+
+    def solde_mensuel(self, prefixes: list[str], sens: str = "D") -> dict[str, float]:
+        """mois -> solde (mouvement net du mois) pour le(s) préfixe(s)."""
+        if sens not in ("D", "C"):
+            raise ValueError(f"sens invalide: {sens!r} (attendu 'D' ou 'C')")
+        out: dict[str, float] = {}
+        for m in self.mois:
+            d, c = self._agg_mensuel(prefixes, m)
+            out[m] = (d - c) if sens == "D" else (c - d)
+        return out
+
+    def solde_mensuel_cumule(self, prefixes: list[str], sens: str = "D") -> dict[str, float]:
+        """mois -> solde cumulé (running balance) dans l'ordre chronologique."""
+        running = 0.0
+        out: dict[str, float] = {}
+        for m, v in sorted(self.solde_mensuel(prefixes, sens).items()):
+            running += v
+            out[m] = running
+        return out
+
 
 def _count_features(df: pd.DataFrame):
     cn = df["CompteNum"].fillna("").astype(str).str.strip()
@@ -133,12 +185,15 @@ def compute_fec_features(df: pd.DataFrame, df_n1: pd.DataFrame | None = None) ->
         debit_n1, credit_n1 = _sums_by_account(df_n1)
 
     comptes, paires_tiers, nb_ecr, journaux, mois = _count_features(df)
+    comptes_n1 = _count_features(df_n1)[0] if df_n1 is not None else []
+    debit_mensuel, credit_mensuel = _monthly_sums(df)
 
     feat = IndicateursFEC(
         debit_n=debit_n, credit_n=credit_n,
         debit_n1=debit_n1, credit_n1=credit_n1,
-        comptes=comptes, paires_tiers=paires_tiers,
+        comptes=comptes, comptes_n1=comptes_n1, paires_tiers=paires_tiers,
         nb_ecritures_par_compte=nb_ecr, journaux=journaux, mois=mois,
+        debit_mensuel=debit_mensuel, credit_mensuel=credit_mensuel,
     )
     feat.ca_n = feat.solde(["70"], "C")
     return feat

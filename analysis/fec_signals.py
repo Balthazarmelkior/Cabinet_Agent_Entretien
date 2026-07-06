@@ -355,6 +355,28 @@ def _volume_facturation(f: IndicateursFEC) -> Signal | None:
                 "Externalisation de la facturation électronique, formation facture électronique")
 
 
+def _decouvert_recurrent(f: IndicateursFEC) -> Signal | None:
+    cumule = f.solde_mensuel_cumule(["519"], "C")
+    nb = sum(1 for v in cumule.values() if v > 0)
+    if nb < 3:
+        return None
+    return _sig("DECOUVERT_RECURRENT", R, M, "Découvert bancaire récurrent",
+                f"Solde créditeur de banque (519) positif sur {nb} mois (seuil 3).",
+                "Prévisionnel de trésorerie, négociation de lignes court terme")
+
+
+def _nouvelles_activites(f: IndicateursFEC) -> Signal | None:
+    if not f.comptes_n1:
+        return None
+    anciens = {c for c in f.comptes_n1 if c.startswith("70")}
+    nouveaux = [c for c in f.comptes if c.startswith("70") and c not in anciens]
+    if not nouveaux:
+        return None
+    return _sig("NOUVELLES_ACTIVITES", O, F, "Nouvelles activités",
+                f"{len(nouveaux)} nouveau(x) compte(s) de produits (70x) vs N-1.",
+                "Modification de société (objet social), secrétariat juridique")
+
+
 def _frais_transport_eleves(f: IndicateursFEC) -> Signal | None:
     if f.solde(["6241", "6242"], "D") < 10000 and f.nb_ecritures(["6241", "6242"]) <= 50:
         return None
@@ -371,7 +393,7 @@ _EXPLICIT_DETECTORS = [
     _frais_financiers_en_hausse, _frais_bancaires_en_hausse, _hausse_immobilisations,
     _honoraires_exceptionnels_en_hausse, _variation_remuneration_dirigeant,
     _augmentation_capital, _resultat_bnc_eleve, _volume_facturation,
-    _frais_transport_eleves,
+    _frais_transport_eleves, _decouvert_recurrent, _nouvelles_activites,
 ]
 
 
@@ -437,11 +459,28 @@ def _delai_facturation_long(f: IndicateursFEC, seuil: float) -> Signal | None:
                 "Optimisation du cycle de facturation, relance et recouvrement")
 
 
+def _saisonnalite_forte(f: IndicateursFEC, seuil: float) -> Signal | None:
+    ca = list(f.solde_mensuel(["70"], "C").values())
+    if len(ca) < 6:
+        return None
+    moyenne = sum(ca) / len(ca)
+    if moyenne <= 0:
+        return None
+    ecart_type = (sum((x - moyenne) ** 2 for x in ca) / len(ca)) ** 0.5
+    cv = ecart_type / moyenne * 100
+    if cv <= seuil:
+        return None
+    return _sig("SAISONNALITE_FORTE", X, F, "Saisonnalité forte",
+                f"CA mensuel dispersé (coefficient de variation {cv:.0f}%, seuil {seuil:.0f}%).",
+                "Prévisionnel de trésorerie, tableau de bord, lissage du BFR")
+
+
 PARAM_SIGNALS: dict[str, ParamSpec] = {
     "INVESTISSEMENT_RECENT": ParamSpec(_investissement_recent, 50000, "Investissement récent"),
     "NOUVEL_EMPRUNT": ParamSpec(_nouvel_emprunt, 50000, "Nouvel emprunt"),
     "BAISSE_MARGE_BRUTE": ParamSpec(_baisse_marge_brute, 5, "Baisse de la marge brute"),
     "DELAI_FACTURATION_LONG": ParamSpec(_delai_facturation_long, 15, "Délai de facturation long"),
+    "SAISONNALITE_FORTE": ParamSpec(_saisonnalite_forte, 30, "Saisonnalité forte"),
 }
 
 
