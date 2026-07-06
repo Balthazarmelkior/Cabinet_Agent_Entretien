@@ -257,6 +257,30 @@ def test_fec_signals_drive_missions(catalogue_path, donnees_saine):
     assert "MISSION_COMPTA_PACK_SERENITE" in ids               # pénalités fiscales
 
 
+def test_fournisseurs_drive_facture_electronique(catalogue_path, donnees_saine):
+    """Un FEC synthétique avec 55 fournisseurs distincts déclenche NOMBREUX_FOURNISSEURS
+    et la mission catalogue associée."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    rows = [{"CompteNum": "401000", "Debit": 0, "Credit": 100,
+             "EcritureDate": "20240115", "CompAuxNum": f"F{i:03}", "JournalCode": "AC"}
+            for i in range(55)]
+    feat = compute_fec_features(pd.DataFrame(rows))
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    assert "NOMBREUX_FOURNISSEURS" in {sig.code for sig in s["signaux_detectes"]}
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_COMPTA_FX_MISE_EN_PLACE" in ids
+
+
 # ── Tests de robustesse ────────────────────────────────────────────────────────
 
 def test_unsupported_file_format_raises_value_error():
