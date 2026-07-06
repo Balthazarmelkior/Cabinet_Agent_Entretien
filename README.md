@@ -13,8 +13,8 @@ Deux modes d'utilisation complémentaires pour préparer les rendez-vous bilan :
 - **Anonymisation RGPD** des données avant envoi aux agents IA (spaCy + Presidio + SIREN/SIRET)
 - **Calcul de ratios** : rentabilité, liquidité, solvabilité, activité + trésorerie (BFR, FRNG, trésorerie nette, cycle de conversion)
 - **Benchmarking sectoriel** : Banque de France → INSEE → LLM (fallback automatique)
-- **Détection de signaux** : règles déterministes + enrichissement LLM
-- **Matching de missions** : catalogue JSON, RAG vectoriel si > 50 missions
+- **Détection de signaux** : moteur déterministe multi-niveaux (ratios, montants agrégés, **moteur FEC compte-fin**) + enrichissement LLM qualitatif — **84/90 codes du référentiel couverts sans LLM**
+- **Matching de missions** : **100 % déterministe** — intersection des `codes_signaux` actifs avec le catalogue TYLS (79 missions), scoré et trié par priorité (plus de LLM/RAG)
 - **Agent CARLA** : analyse sectorielle stratégique via Perplexity (ReAct loop avec validation de sources), SWOT sectoriel, analyse micro-économique, questions stratégiques RDV
 - **Analyse de trésorerie** : KPIs (BFR, FRNG, trésorerie nette), waterfall BFR, cycle de conversion, jauge trésorerie nette
 - **Fiche d'entretien** enrichie avec toutes les données (sectoriel, trésorerie, benchmark, signaux) exportable en Word (.docx)
@@ -57,6 +57,64 @@ validate → (ok: export | retry: lucie | abort: END)
 
 ---
 
+## Détection de signaux & matching (moteur déterministe)
+
+Le cœur métier repose sur un **référentiel de 90 signaux** et un **catalogue de 79
+missions TYLS**, reliés par des codes. Tout est déterministe : le LLM n'intervient
+qu'en enrichissement qualitatif optionnel.
+
+### Référentiel & catalogue
+
+| Fichier | Rôle | Env |
+|---------|------|-----|
+| `data/seuils_signaux.json` | 90 signaux indexés par code (catégorie, `comptes_fec`, seuil, période, `parametrable`) | `SEUILS_PATH` |
+| `data/catalogue_missions_tyls.json` | 79 missions (`codes_signaux`, priorité, honoraires…) | `CATALOGUE_PATH` |
+
+### Chaîne de détection (`nodes/detect_signals.py`)
+
+Quatre niveaux, du plus simple au plus fin, tous alignés sur les codes du référentiel :
+
+| Niveau | Module | Entrée | Exemples de codes |
+|--------|--------|--------|-------------------|
+| 1. Ratios | `analysis/rules.py::detect_signals_from_rules` | `Ratios` | `EBE_NEGATIF`, `LIQUIDITE_CRITIQUE`, `DELAI_CLIENTS_ELEVE` |
+| 2. Montants agrégés | `analysis/rules.py::detect_signals_from_donnees` | `DonneesFinancieres` | `TRESORERIE_EXCEDENTAIRE`, `MASSE_SALARIALE_ELEVEE`, `DEPASSEMENT_SEUILS_CAC` |
+| 3. Moteur FEC | `analysis/fec_signals.py::detect_signals_from_fec` | `IndicateursFEC` | `REMUNERATION_DIRIGEANT_ELEVEE`, `DECOUVERT_RECURRENT`, `SAISONNALITE_FORTE` |
+| 4. Enrichissement LLM | `detect_signals.py` (GPT-4o) | contexte | signaux sectoriels/gouvernance qualitatifs |
+
+Le **moteur FEC** (`analysis/fec_features.py` + `fec_signals.py`) calcule des
+indicateurs fins depuis le FEC brut (ΣDébit/ΣCrédit par compte, N et N-1, comptages
+de tiers/comptes/journaux distincts, **sommes mensuelles par compte**) puis applique :
+
+- **Tables génériques** — `GENERIC_SIGNALS` (opérateurs `seuil_eur` / `presence` /
+  `absence` / `mouvement`), `COUNT_SIGNALS` (métriques distinctes), `PARAM_SIGNALS`
+  (composites paramétrables : Δ N/N-1, marge, DSO, coefficient de variation).
+- **Détecteurs explicites** — ratios, composites même-année, variations N/N-1,
+  signaux mensuels (découvert récurrent, saisonnalité), nouvelles activités.
+
+**Couverture : 84/90 codes en déterministe.** Les 6 restants nécessitent une donnée
+hors périmètre FEC (N-2, dates d'échéance, montant d'origine d'emprunt) ou relèvent
+d'une détection qualitative (LLM) / d'une saisie manuelle.
+
+### Seuils paramétrables (UI)
+
+Les signaux marqués `parametrable: true` exposent leur seuil dans l'expander
+**« Seuils de détection (avancé) »** de l'UI Streamlit (`seuils_parametrables()` +
+`titre_signal()`). Les valeurs modifiées sont passées au pipeline via
+`seuils_overrides` et priment sur les défauts du référentiel.
+
+### Matching (`matching/mission_matcher.py` + `nodes/match_missions.py`)
+
+`MissionMatcher` charge catalogue + référentiel et déclenche chaque mission dont les
+`codes_signaux` **intersectent** les signaux actifs. Score = nombre de signaux
+déclencheurs ; tri `(priorité, score)`. Les missions **priorité 1** sont toujours
+proposées. `_verifier_coherence` garantit que tout code référencé par une mission
+existe dans le référentiel.
+
+> Les anciens matchers LLM/RAG (`matching/llm_matcher.py`, `matching/rag_matcher.py`,
+> `RAG_THRESHOLD`) restent sur disque mais **ne sont plus branchés** dans le pipeline.
+
+---
+
 ## Installation
 
 ### Prérequis
@@ -82,6 +140,9 @@ OPENAI_API_KEY=sk-...          # requis — GPT-4o pour LLM
 INSEE_API_KEY=...              # optionnel — benchmark INSEE Esane
 PERPLEXITY_API_KEY=pplx-...    # optionnel — analyse sectorielle CARLA (fallback: GPT-4o)
 GAMMA_API_KEY=...              # optionnel — génération slides (fallback: Markdown seul)
+LLM_MODEL=gpt-4o               # optionnel — modèle LLM (défaut gpt-4o)
+CATALOGUE_PATH=data/catalogue_missions_tyls.json  # optionnel — catalogue missions
+SEUILS_PATH=data/seuils_signaux.json              # optionnel — référentiel signaux
 ```
 
 #### Mode FastAPI (complet)
@@ -197,7 +258,9 @@ curl http://localhost:8000/api/v1/export/{job_id} \
 │   └── tools.py            # Tools: perplexity_search, source_validator
 ├── analysis/
 │   ├── ratios.py           # Calcul des ratios (rentabilité, trésorerie, activité)
-│   └── rules.py            # Règles de détection de signaux
+│   ├── rules.py            # Signaux niveaux 1-2 (ratios + montants agrégés)
+│   ├── fec_features.py     # IndicateursFEC : ΣD/ΣC par compte, comptages, mensuel
+│   └── fec_signals.py      # Moteur FEC (GENERIC/COUNT/PARAM + détecteurs explicites)
 ├── app/
 │   ├── main.py             # UI Streamlit (formulaire + dashboard)
 │   └── components/
@@ -206,15 +269,21 @@ curl http://localhost:8000/api/v1/export/{job_id} \
 │       ├── download.py     # Export Word
 │       └── treasury.py     # Graphiques trésorerie (waterfall, cycle, jauge)
 ├── benchmark/              # Orchestrateur multi-sources (BdF, INSEE, LLM)
-├── matching/               # Matching missions (LLM direct ou RAG)
+├── matching/
+│   ├── mission_matcher.py  # Matcher déterministe (codes_signaux ∩ signaux)
+│   ├── llm_matcher.py      # ⚠️ legacy — plus branché
+│   └── rag_matcher.py      # ⚠️ legacy — plus branché
+├── data/
+│   ├── catalogue_missions_tyls.json  # 79 missions TYLS
+│   └── seuils_signaux.json           # 90 signaux (référentiel)
 ├── nodes/                  # Nodes LangGraph (pipeline Streamlit)
 │   ├── analyse_sectorielle.py  # Agent CARLA → note + SWOT + micro + questions
 │   ├── benchmark_sectoriel.py  # BdF → INSEE → LLM fallback
-│   ├── detect_signals.py       # Règles + enrichissement LLM
-│   ├── extract_financial_data.py
+│   ├── detect_signals.py       # Niveaux 1-4 (ratios + montants + FEC + LLM)
+│   ├── extract_financial_data.py   # Parsing + IndicateursFEC
 │   ├── generate_interview_plan.py  # Fiche entretien (toutes données)
 │   ├── generate_slides.py     # Gamma API v1.0
-│   └── match_missions.py
+│   └── match_missions.py       # Appelle MissionMatcher (déterministe)
 ├── shared/
 │   └── slide_builder.py    # Builder Markdown partagé (Streamlit + FastAPI)
 ├── utils/
@@ -255,7 +324,10 @@ Utilise **spaCy** (`fr_core_news_md`) + **Microsoft Presidio** :
 Norme DGFiP (Article A47 A-1 du LPF) :
 - Séparateur : tabulation
 - Encodage : latin-1 (ISO-8859-1)
-- Colonnes obligatoires : `JournalCode`, `EcritureDate`, `CompteNum`, `Montant`
+- Colonnes clés : `JournalCode`, `EcritureDate`, `CompteNum`, `CompAuxNum`
+- Montants : soit `Debit` + `Credit`, soit `Montant` + `Sens` — les deux formats
+  sont gérés par `analysis/fec_features.py` (le moteur FEC ne calcule les
+  indicateurs mensuels que si `EcritureDate` est présente)
 
 ---
 
@@ -279,19 +351,36 @@ Norme DGFiP (Article A47 A-1 du LPF) :
 
 ## Ajouter un signal déterministe
 
-Éditer `analysis/rules.py` :
+**1. Déclarer le code** dans `data/seuils_signaux.json` (catégorie, `comptes_fec`,
+seuil, période, `parametrable`). Le matcher exige que tout code référencé par une
+mission existe dans le référentiel.
+
+**2. Choisir le niveau de détection** selon la donnée disponible :
+
+- **Ratio** (`analysis/rules.py::detect_signals_from_rules`) :
 
 ```python
 if ratios.mon_ratio < seuil:
-    signals.append(Signal(
-        type=TypeSignal.RISQUE,
-        gravite=Gravite.MOYENNE,
-        code="MON_CODE_SIGNAL",
-        titre="Titre court",
-        description="Description chiffrée.",
-        levier="Ce que le cabinet peut proposer"
-    ))
+    signals.append(Signal(type=TypeSignal.RISQUE, gravite=Gravite.MOYENNE,
+        code="MON_CODE_SIGNAL", titre="Titre court",
+        description="Description chiffrée.", levier="Ce que le cabinet propose"))
 ```
+
+- **Montant agrégé** (`detect_signals_from_donnees`) : même patron, à partir de
+  `DonneesFinancieres` (postes N/N-1).
+
+- **Signal FEC compte-fin** (`analysis/fec_signals.py`) — le plus courant :
+  - montant/présence/absence/mouvement simple → ajouter une entrée à `GENERIC_SIGNALS` ;
+  - comptage de comptes/tiers/journaux distincts → `COUNT_SIGNALS` ;
+  - composite paramétrable (Δ N/N-1, ratio, DSO…) → `PARAM_SIGNALS` (`fn(feat, seuil)`) ;
+  - logique ad hoc → détecteur explicite ajouté à `_EXPLICIT_DETECTORS`.
+
+  Les accesseurs de `IndicateursFEC` (`solde`, `mouvement`, `variation_pct`,
+  `ratio_pct`, `nb_comptes`/`nb_tiers`/`nb_ecritures`, `solde_mensuel`/
+  `solde_mensuel_cumule`) couvrent la plupart des cas.
+
+**3. Câbler une mission** : ajouter le code dans les `codes_signaux` d'une mission
+du catalogue — le matching se fait automatiquement.
 
 ---
 
@@ -300,6 +389,8 @@ if ratios.mon_ratio < seuil:
 | Composant | Technologie |
 |-----------|-------------|
 | Orchestration | LangGraph (StateGraph) |
+| Détection signaux | Moteur déterministe (référentiel 90 codes) + GPT-4o (enrichissement) |
+| Matching missions | Déterministe (`codes_signaux` ∩ signaux) |
 | LLM | OpenAI GPT-4o |
 | Analyse sectorielle | Agent CARLA — Perplexity (`sonar-pro`) + ReAct loop |
 | Présentation | Gamma API v1.0 (`public-api.gamma.app`) |
@@ -309,7 +400,7 @@ if ratios.mon_ratio < seuil:
 | Queue / Cache | Redis |
 | Parsing FEC | pandas |
 | Parsing PDF | pdfplumber + LLM |
-| Embeddings / RAG | langchain-chroma + OpenAI |
+| Embeddings / RAG | langchain-chroma + OpenAI (legacy, matching désormais déterministe) |
 | Benchmarking | BdF Webstat API + INSEE API |
 | UI | Streamlit + Plotly |
 | Export Word | python-docx |
@@ -320,9 +411,10 @@ if ratios.mon_ratio < seuil:
 ## Tests
 
 ```bash
-pytest                                                        # tous les tests (122)
-pytest tests/test_fec_parser.py                              # fichier unique
-pytest tests/test_ratios.py                                  # ratios + trésorerie
+pytest                                                        # tous les tests (263)
+pytest tests/test_fec_signals.py                             # moteur FEC (signaux)
+pytest tests/test_fec_features.py                            # indicateurs FEC
+pytest tests/test_mission_matcher.py                         # matching déterministe
 pytest tests/test_rules.py -k "test_ebe_negatif"             # test par nom
 pytest -x                                                     # stop au premier échec
 ```
