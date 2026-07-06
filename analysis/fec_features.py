@@ -32,6 +32,25 @@ def _sums_by_account(df: pd.DataFrame) -> tuple[dict[str, float], dict[str, floa
     return {k: float(v) for k, v in d.items()}, {k: float(v) for k, v in c.items()}
 
 
+def _sums_hors_an(df: pd.DataFrame) -> tuple[dict[str, float], dict[str, float]]:
+    """(debit, credit) par compte en EXCLUANT le journal des à-nouveaux (AN).
+
+    Les soldes d'ouverture (report N-1) ne sont pas des mouvements de l'exercice :
+    on les retire pour que `mouvement` reflète l'activité réelle de l'année.
+    Convention DGFiP : journal à-nouveaux codé « AN* ». Si la colonne JournalCode
+    est absente, aucun filtrage (dégradé, comportement identique à `_sums_by_account`).
+    """
+    comptes, debit, credit = _normalize_amounts(df)
+    if "JournalCode" in df.columns:
+        jc = df["JournalCode"].fillna("").astype(str).str.strip().str.upper()
+        mask = ~jc.str.startswith("AN")
+    else:
+        mask = pd.Series(True, index=df.index)
+    d = debit[mask].groupby(comptes[mask]).sum().to_dict()
+    c = credit[mask].groupby(comptes[mask]).sum().to_dict()
+    return {k: float(v) for k, v in d.items()}, {k: float(v) for k, v in c.items()}
+
+
 def _monthly_sums(df: pd.DataFrame) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]]:
     """Retourne (debit_mensuel, credit_mensuel) : mois(YYYYMM) -> compte -> Σ.
     Vide si la colonne EcritureDate est absente."""
@@ -55,6 +74,8 @@ class IndicateursFEC(BaseModel):
     credit_n: dict[str, float] = Field(default_factory=dict)
     debit_n1: dict[str, float] = Field(default_factory=dict)
     credit_n1: dict[str, float] = Field(default_factory=dict)
+    debit_hors_an: dict[str, float] = Field(default_factory=dict)
+    credit_hors_an: dict[str, float] = Field(default_factory=dict)
     ca_n: float = 0.0
     comptes: list[str] = Field(default_factory=list)
     comptes_n1: list[str] = Field(default_factory=list)
@@ -80,7 +101,17 @@ class IndicateursFEC(BaseModel):
         return (d - c) if sens == "D" else (c - d)
 
     def mouvement(self, prefixes: list[str], *, n1: bool = False) -> float:
-        d, c = self._agg(prefixes, n1=n1)
+        """Mouvement de l'exercice (ΣDébit+ΣCrédit), à-nouveaux EXCLUS pour N.
+
+        Contrairement à `solde`, `mouvement` ne compte que l'activité de l'année :
+        un report d'ouverture (journal AN) ne doit pas être pris pour une opération
+        nouvelle (ex. NOUVEAU_BAIL, NOUVEL_ASSOCIE)."""
+        if n1:
+            d, c = self._agg(prefixes, n1=True)
+            return d + c
+        pref = tuple(prefixes)
+        d = sum(v for k, v in self.debit_hors_an.items() if k.startswith(pref))
+        c = sum(v for k, v in self.credit_hors_an.items() if k.startswith(pref))
         return d + c
 
     def variation_pct(self, prefixes: list[str], sens: str = "D") -> float | None:
@@ -180,6 +211,7 @@ def _count_features(df: pd.DataFrame):
 
 def compute_fec_features(df: pd.DataFrame, df_n1: pd.DataFrame | None = None) -> IndicateursFEC:
     debit_n, credit_n = _sums_by_account(df)
+    debit_hors_an, credit_hors_an = _sums_hors_an(df)
     debit_n1, credit_n1 = ({}, {})
     if df_n1 is not None:
         debit_n1, credit_n1 = _sums_by_account(df_n1)
@@ -191,6 +223,7 @@ def compute_fec_features(df: pd.DataFrame, df_n1: pd.DataFrame | None = None) ->
     feat = IndicateursFEC(
         debit_n=debit_n, credit_n=credit_n,
         debit_n1=debit_n1, credit_n1=credit_n1,
+        debit_hors_an=debit_hors_an, credit_hors_an=credit_hors_an,
         comptes=comptes, comptes_n1=comptes_n1, paires_tiers=paires_tiers,
         nb_ecritures_par_compte=nb_ecr, journaux=journaux, mois=mois,
         debit_mensuel=debit_mensuel, credit_mensuel=credit_mensuel,

@@ -518,3 +518,24 @@ def test_nouvelles_activites_aucun_nouveau():
 def test_nouvelles_activites_sans_n1():
     df = _df([("706000", 0, 50000, "20240115"), ("707000", 0, 20000, "20240115")])
     assert "NOUVELLES_ACTIVITES" not in _codes(df)
+
+
+# ── Fix revue : journal AN (à-nouveaux) exclu du calcul `mouvement` ───────────
+def test_nouveau_bail_ne_declenche_pas_sur_a_nouveaux():
+    # 275 mouvementé uniquement par le report à-nouveaux -> pas un nouveau bail
+    df = _dfx([("275000", 2934, 0, "20240101", "", "AN")])
+    assert "NOUVEAU_BAIL" not in _codesx(df)
+
+
+def test_nouveau_bail_declenche_sur_ecriture_courante():
+    # 275 mouvementé par une écriture d'exploitation -> vrai nouveau bail
+    df = _dfx([("275000", 2934, 0, "20240615", "", "OD")])
+    assert "NOUVEAU_BAIL" in _codesx(df)
+
+
+def test_solde_conserve_les_a_nouveaux():
+    # Le solde de bilan doit inclure l'ouverture AN (contrairement à mouvement)
+    from analysis.fec_features import compute_fec_features
+    feat = compute_fec_features(_dfx([("213000", 100000, 0, "20240101", "", "AN")]))
+    assert feat.solde(["213"], "D") == 100000        # solde inclut AN
+    assert feat.mouvement(["213"]) == 0              # mouvement exclut AN
