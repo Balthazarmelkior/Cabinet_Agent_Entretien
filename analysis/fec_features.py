@@ -95,33 +95,31 @@ class IndicateursFEC(BaseModel):
 
 
 def _count_features(df: pd.DataFrame):
-    cn = df["CompteNum"].astype(str)
-    comptes = sorted(cn.unique().tolist())
+    cn = df["CompteNum"].fillna("").astype(str).str.strip()
+    comptes = sorted(c for c in cn.unique().tolist() if c)
     # nombre de LIGNES d'écriture par compte (proxy volume ; ACOMPTES = lignes/an au référentiel)
-    nb_ecritures_par_compte = {k: int(v) for k, v in cn.value_counts().to_dict().items()}
+    nb_ecritures_par_compte = {
+        k: int(v) for k, v in cn[cn != ""].value_counts().to_dict().items()
+    }
 
     if "CompAuxNum" in df.columns:
-        aux = df["CompAuxNum"].astype(str).str.strip()
+        aux = df["CompAuxNum"].fillna("").astype(str).str.strip()
         aux = aux.where(~aux.str.lower().isin(["nan", "none"]), "")
     else:
         aux = pd.Series([""] * len(df), index=df.index)
-    paires_tiers = sorted({(c, a) for c, a in zip(cn, aux)})
+    paires_tiers = sorted({(c, a) for c, a in zip(cn, aux) if c})
     paires_tiers = [[c, a] for c, a in paires_tiers]
 
     if "JournalCode" in df.columns:
-        journaux = sorted(
-            j for j in df["JournalCode"].astype(str).str.strip().unique()
-            if j and j.lower() not in ("nan", "none")
-        )
+        jc = df["JournalCode"].fillna("").astype(str).str.strip()
+        journaux = sorted(j for j in jc.unique() if j and j.lower() not in ("nan", "none"))
     else:
         journaux = []
 
-    # mois = mois-avec-activité présents dans le FEC (pas forcément 12 mois calendaires)
     if "EcritureDate" in df.columns:
-        mois = sorted({
-            str(d)[:6] for d in df["EcritureDate"].astype(str).str.strip()
-            if str(d)[:6] and str(d)[:6].lower() not in ("nan", "none")
-        })
+        ed = df["EcritureDate"].fillna("").astype(str).str.strip()
+        # mois = mois-avec-activité présents dans le FEC (pas forcément 12 mois calendaires)
+        mois = sorted({d[:6] for d in ed if d[:6] and d[:6].lower() not in ("nan", "none")})
     else:
         mois = []
 

@@ -180,3 +180,19 @@ def test_nb_tiers_aux_partage_entre_sous_comptes():
         ("401200", 0, 200, "20240102", "F001", "AC"),
     ]))
     assert f.nb_tiers(["401"]) == 1
+
+
+def test_count_features_dtype_nullable_avec_na():
+    import pandas as pd
+    df = pd.DataFrame({
+        "CompteNum": pd.array(["401000", "401000", "607000"], dtype="string"),
+        "Debit":  [0, 0, 100],
+        "Credit": [100, 200, 0],
+        "EcritureDate": pd.array(["20240101", "20240201", "20240301"], dtype="string"),
+        "CompAuxNum": pd.array(["F001", pd.NA, pd.NA], dtype="string"),
+        "JournalCode": pd.array(["AC", "AC", pd.NA], dtype="string"),
+    })
+    f = compute_fec_features(df)          # ne doit PAS lever
+    assert f.nb_tiers(["401"]) == 2       # F001 + repli sous-compte 401000
+    assert f.nb_journaux() == 1           # AC (le NA ignoré)
+    assert f.nb_mois() == 3
