@@ -231,3 +231,66 @@ def test_cca_gravite_paliers():
     assert _grav(90000) == Gravite.FAIBLE
     assert _grav(120000) == Gravite.MOYENNE
     assert _grav(160000) == Gravite.ELEVEE
+
+
+def _dfx(rows):
+    return pd.DataFrame([
+        {"CompteNum": c, "Debit": d, "Credit": cr, "EcritureDate": dt,
+         "CompAuxNum": aux, "JournalCode": jc}
+        for c, d, cr, dt, aux, jc in rows
+    ])
+
+
+def _codesx(df, overrides=None):
+    feat = compute_fec_features(df)
+    return {s.code for s in detect_signals_from_fec(feat, overrides or {})}
+
+
+def test_emprunts_multiples():
+    df = _dfx([("164100", 0, 1, "20240101", "", "OD"),
+               ("164200", 0, 1, "20240101", "", "OD"),
+               ("164300", 0, 1, "20240101", "", "OD")])
+    assert "EMPRUNTS_MULTIPLES" in _codesx(df)
+    df2 = _dfx([("164100", 0, 1, "20240101", "", "OD"),
+                ("164200", 0, 1, "20240101", "", "OD")])
+    assert "EMPRUNTS_MULTIPLES" not in _codesx(df2)
+
+
+def test_nombreux_fournisseurs_via_aux():
+    rows = [("401000", 0, 1, "20240101", f"F{i:03}", "AC") for i in range(50)]
+    assert "NOMBREUX_FOURNISSEURS" in _codesx(_dfx(rows))
+    rows2 = [("401000", 0, 1, "20240101", f"F{i:03}", "AC") for i in range(49)]
+    assert "NOMBREUX_FOURNISSEURS" not in _codesx(_dfx(rows2))
+
+
+def test_complexite_comptable():
+    rows = [("600000", 1, 0, "20240101", "", jc) for jc in
+            ["AC", "VE", "BQ", "OD", "OI", "SA", "AN", "CA"]]
+    assert "COMPLEXITE_COMPTABLE" in _codesx(_dfx(rows))
+
+
+def test_acomptes_frequents():
+    rows = [("419100", 100, 0, f"202401{d:02}", "", "VE") for d in range(1, 6)]
+    assert "ACOMPTES_FREQUENTS" in _codesx(_dfx(rows))
+
+
+def test_count_override_abaisse_seuil():
+    df = _dfx([("164100", 0, 1, "20240101", "", "OD"),
+               ("164200", 0, 1, "20240101", "", "OD")])
+    assert "EMPRUNTS_MULTIPLES" not in _codesx(df)
+    assert "EMPRUNTS_MULTIPLES" in _codesx(df, overrides={"EMPRUNTS_MULTIPLES": 2})
+
+
+def test_volume_facturation_emises():
+    rows = [("700000", 0, 100, "20240115", "", "VE") for _ in range(30)]
+    assert "VOLUME_FACTURATION_ELEVE" in _codesx(_dfx(rows))
+
+
+def test_volume_facturation_recues():
+    rows = [("600000", 100, 0, "20240115", "", "AC") for _ in range(50)]
+    assert "VOLUME_FACTURATION_ELEVE" in _codesx(_dfx(rows))
+
+
+def test_volume_facturation_non_declenche():
+    rows = [("700000", 0, 100, "20240115", "", "VE") for _ in range(10)]
+    assert "VOLUME_FACTURATION_ELEVE" not in _codesx(_dfx(rows))

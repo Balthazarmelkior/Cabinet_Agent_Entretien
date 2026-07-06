@@ -82,6 +82,53 @@ GENERIC_SIGNALS: dict[str, GenericSpec] = {
 }
 
 
+class CountSpec(NamedTuple):
+    metric: str            # "nb_comptes" | "nb_tiers" | "nb_ecritures" | "nb_journaux"
+    comptes: list[str]
+    seuil_defaut: int
+    type: TypeSignal
+    gravite: Gravite
+    titre: str
+    levier: str
+
+
+COUNT_SIGNALS: dict[str, CountSpec] = {
+    "EMPRUNTS_MULTIPLES": CountSpec("nb_comptes", ["164"], 3, O, F,
+        "Emprunts multiples", "Recherche de financement, restructuration de dette"),
+    "MULTI_BIENS_IMMOBILIERS": CountSpec("nb_comptes", ["213"], 2, O, F,
+        "Multi-biens immobiliers", "Gestion de SCI, gestion de portefeuille investisseurs"),
+    "PARC_VEHICULES_IMPORTANT": CountSpec("nb_comptes", ["2182"], 5, C, F,
+        "Parc de véhicules important", "Flotte automobile (assurance)"),
+    "NOMBREUX_FOURNISSEURS": CountSpec("nb_tiers", ["401"], 50, C, F,
+        "Nombreux fournisseurs", "Mise en place facture électronique"),
+    "ACOMPTES_FREQUENTS": CountSpec("nb_ecritures", ["4191"], 5, C, F,
+        "Acomptes fréquents", "Mise en place facture électronique"),
+    "COMPLEXITE_COMPTABLE": CountSpec("nb_journaux", [], 8, O, M,
+        "Comptabilité complexe", "DAF externalisée, contrôle de gestion"),
+}
+
+
+def _count_metric(feat: IndicateursFEC, spec: CountSpec) -> int:
+    if spec.metric == "nb_comptes":
+        return feat.nb_comptes(spec.comptes)
+    if spec.metric == "nb_tiers":
+        return feat.nb_tiers(spec.comptes)
+    if spec.metric == "nb_ecritures":
+        return feat.nb_ecritures(spec.comptes)
+    return feat.nb_journaux()
+
+
+def _eval_count(code: str, feat: IndicateursFEC, seuils_overrides: dict[str, float]) -> Signal | None:
+    spec = COUNT_SIGNALS[code]
+    seuil = float(seuils_overrides.get(code, spec.seuil_defaut))
+    valeur = _count_metric(feat, spec)
+    if valeur < seuil:
+        return None
+    return Signal(type=spec.type, gravite=spec.gravite, code=code, titre=spec.titre,
+                  description=f"{spec.titre} : {int(valeur)} détecté(s) (seuil {int(seuil)}).",
+                  levier=spec.levier)
+
+
 def _desc_generic(op: str, comptes: list[str], seuil: float, valeur: float) -> str:
     j = "/".join(comptes)
     if op == "seuil_eur":
@@ -280,6 +327,18 @@ def _resultat_bnc_eleve(f: IndicateursFEC) -> Signal | None:
                 "Structuration des professions libérales (SEL, SPFPL)")
 
 
+def _volume_facturation(f: IndicateursFEC) -> Signal | None:
+    mois = f.nb_mois()
+    emises = f.nb_ecritures(["70"]) / mois
+    recues = f.nb_ecritures(["60"]) / mois
+    if emises < 30 and recues < 50:
+        return None
+    return _sig("VOLUME_FACTURATION_ELEVE", C, M, "Volume de facturation élevé",
+                f"Facturation : {emises:.0f} émises/mois, {recues:.0f} reçues/mois "
+                f"(seuils 30 émises / 50 reçues).",
+                "Externalisation de la facturation électronique, formation facture électronique")
+
+
 _EXPLICIT_DETECTORS = [
     _charges_sociales_elevees, _ratio_dividendes_eleve, _charges_sociales_perso_elevees,
     _amortissements_avances, _compte_courant_crediteur_eleve, _absence_interessement,
@@ -287,7 +346,7 @@ _EXPLICIT_DETECTORS = [
     _absence_force_commerciale, _depenses_pub_sans_effet, _immo_locatif_non_amorti,
     _frais_financiers_en_hausse, _frais_bancaires_en_hausse, _hausse_immobilisations,
     _honoraires_exceptionnels_en_hausse, _variation_remuneration_dirigeant,
-    _augmentation_capital, _resultat_bnc_eleve,
+    _augmentation_capital, _resultat_bnc_eleve, _volume_facturation,
 ]
 
 
@@ -296,6 +355,10 @@ def detect_signals_from_fec(feat: IndicateursFEC, seuils_overrides: dict[str, fl
     signals: list[Signal] = []
     for code in GENERIC_SIGNALS:
         sig = _eval_generic(code, feat, overrides)
+        if sig is not None:
+            signals.append(sig)
+    for code in COUNT_SIGNALS:
+        sig = _eval_count(code, feat, overrides)
         if sig is not None:
             signals.append(sig)
     for detector in _EXPLICIT_DETECTORS:
