@@ -320,3 +320,18 @@ def test_complexite_comptable_borne():
     rows = [("600000", 1, 0, "20240101", "", jc) for jc in
             ["AC", "VE", "BQ", "OD", "OI", "SA", "AN"]]  # 7 < 8
     assert "COMPLEXITE_COMPTABLE" not in _codesx(_dfx(rows))
+
+
+def test_seuils_parametrables_inclut_comptage():
+    params = seuils_parametrables(SEUILS)
+    for code in ["EMPRUNTS_MULTIPLES", "NOMBREUX_FOURNISSEURS", "COMPLEXITE_COMPTABLE"]:
+        if SEUILS.get(code, {}).get("parametrable"):
+            assert code in params
+    assert "VOLUME_FACTURATION_ELEVE" not in params
+
+
+def test_titre_signal_resout_les_deux_tables():
+    from analysis.fec_signals import titre_signal
+    assert titre_signal("REMUNERATION_DIRIGEANT_ELEVEE")
+    assert titre_signal("EMPRUNTS_MULTIPLES") == "Emprunts multiples"
+    assert titre_signal("CODE_INCONNU") == "CODE_INCONNU"

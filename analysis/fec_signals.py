@@ -110,6 +110,26 @@ COUNT_SIGNALS: dict[str, CountSpec] = {
 }
 
 
+def seuils_parametrables(referentiel: dict) -> dict[str, float]:
+    """code -> seuil défaut, pour les signaux GENERIC + COUNT parametrable:true."""
+    out: dict[str, float] = {}
+    for table in (GENERIC_SIGNALS, COUNT_SIGNALS):
+        for code in table:
+            ref = referentiel.get(code, {})
+            if ref.get("parametrable") and ref.get("seuil_valeur") is not None:
+                out[code] = float(ref["seuil_valeur"])
+    return out
+
+
+def titre_signal(code: str) -> str:
+    """Titre lisible d'un code, cherché dans GENERIC puis COUNT (repli = code)."""
+    if code in GENERIC_SIGNALS:
+        return GENERIC_SIGNALS[code].titre
+    if code in COUNT_SIGNALS:
+        return COUNT_SIGNALS[code].titre
+    return code
+
+
 def _count_metric(feat: IndicateursFEC, spec: CountSpec) -> int:
     if spec.metric == "nb_comptes":
         return feat.nb_comptes(spec.comptes)
@@ -157,16 +177,6 @@ def _eval_generic(code: str, feat: IndicateursFEC, seuils_overrides: dict[str, f
             return None
     return Signal(type=spec.type, gravite=spec.gravite, code=code, titre=spec.titre,
                   description=_desc_generic(spec.op, spec.comptes, seuil, valeur), levier=spec.levier)
-
-
-def seuils_parametrables(referentiel: dict) -> dict[str, float]:
-    """code -> seuil défaut, pour les signaux GENERIC parametrable:true (source unique UI + moteur)."""
-    out: dict[str, float] = {}
-    for code, spec in GENERIC_SIGNALS.items():
-        ref = referentiel.get(code, {})
-        if ref.get("parametrable") and ref.get("seuil_valeur") is not None:
-            out[code] = float(ref["seuil_valeur"])
-    return out
 
 
 def _sig(code, typ, grav, titre, desc, levier) -> Signal:

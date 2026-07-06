@@ -212,13 +212,13 @@ def render_form():
 
     with st.expander("⚙️ Seuils de détection (avancé)"):
         import json as _json
-        from analysis.fec_signals import seuils_parametrables, GENERIC_SIGNALS
+        from analysis.fec_signals import seuils_parametrables, titre_signal
         _ref = _json.loads(Path("data/seuils_signaux.json").read_text(encoding="utf-8"))
         _defauts = seuils_parametrables(_ref)
         seuils_overrides = {}
         st.caption("Ajustez les seuils des signaux paramétrables. Valeur = défaut → ignoré.")
         for _code, _def in sorted(_defauts.items()):
-            _titre = GENERIC_SIGNALS[_code].titre
+            _titre = titre_signal(_code)
             _val = st.number_input(f"{_titre} ({_code})", min_value=0.0, value=float(_def),
                                    step=1000.0, key=f"seuil_{_code}")
             if _val != _def:
