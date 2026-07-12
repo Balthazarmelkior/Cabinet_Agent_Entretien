@@ -11,6 +11,7 @@
 #      - AZURE_SUBSCRIPTION_ID
 #      - AZURE_RESOURCE_GROUP
 #      - ACR_NAME (Azure Container Registry name)
+#      - ACR_USERNAME / ACR_PASSWORD (admin credentials, `az acr credential show`)
 #      - ACA_NAME (Azure Container App name)
 #      - ACA_ENVIRONMENT (Container Apps Environment name)
 #      - OPENAI_API_KEY
@@ -173,6 +174,8 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           acrName: ${{ secrets.ACR_NAME }}
+          acrUsername: ${{ secrets.ACR_USERNAME }}
+          acrPassword: ${{ secrets.ACR_PASSWORD }}
           containerAppName: ${{ secrets.ACA_NAME }}
           resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
           containerAppEnvironment: ${{ secrets.ACA_ENVIRONMENT }}
