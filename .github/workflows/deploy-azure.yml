@@ -200,7 +200,7 @@ jobs:
               GAMMA_API_KEY=secretref:gamma-api-key \
               INSEE_API_KEY=secretref:insee-api-key \
               LLM_MODEL=gpt-4o \
-            --cpu 1.0 --memory 2.0Gi \
+            --cpu 2.0 --memory 4.0Gi \
             --min-replicas 1 --max-replicas 3
       
       - name: Get Container App URL
