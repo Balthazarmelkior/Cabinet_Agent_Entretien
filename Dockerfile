@@ -27,9 +27,6 @@ RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN uv pip install --no-cache -r requirements.txt
 
-# Download spaCy French model (for anonymization)
-RUN python -m spacy download fr_core_news_md --quiet
-
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime
 # -----------------------------------------------------------------------------
@@ -45,10 +42,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-
-# Copy spaCy models
-COPY --from=builder /opt/venv/lib/python3.11/site-packages/fr_core_news_md \
-     /opt/venv/lib/python3.11/site-packages/fr_core_news_md
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser
