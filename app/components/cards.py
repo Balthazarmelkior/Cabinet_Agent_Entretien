@@ -28,7 +28,7 @@ def render_signal(signal: Signal):
     </div>""", unsafe_allow_html=True)
 
 
-def render_mission(reco: MissionRecommandee):
+def render_mission(reco: MissionRecommandee, signaux_by_code: dict[str, Signal] | None = None):
     m           = reco.mission
     urgence_css = URGENCE_CSS.get(reco.urgence, "moyen")
     badge_cls, badge_label = URGENCE_BADGE.get(reco.urgence, ("badge badge-blue", reco.urgence))
@@ -36,10 +36,26 @@ def render_mission(reco: MissionRecommandee):
     honoraires  = f'<span class="badge badge-green">{m.honoraires_indicatifs}</span>' \
                   if m.honoraires_indicatifs else ""
 
+    signaux_by_code = signaux_by_code or {}
+    if reco.signaux_declencheurs:
+        chips = " ".join(
+            f'<span class="badge badge-grey" title="{code}">'
+            f'{signaux_by_code[code].titre if code in signaux_by_code else code.replace("_", " ").capitalize()}'
+            f"</span>"
+            for code in reco.signaux_declencheurs
+        )
+        declencheurs = f'<div class="mission-declencheurs">🧩 Déclenchée par : {chips}</div>'
+    else:
+        declencheurs = (
+            '<div class="mission-declencheurs">📌 Proposée systématiquement '
+            "(priorité 1, aucun signal requis)</div>"
+        )
+
     st.markdown(f"""
     <div class="mission-card mission-urgence-{urgence_css}">
         <div class="mission-titre">{m.titre}</div>
         <div class="mission-arg">{reco.argumentaire}</div>
+        {declencheurs}
         <div class="mission-meta">
             <span class="{badge_cls}">{badge_label}</span>
             <span class="badge badge-score">Pertinence {score_pct}%</span>

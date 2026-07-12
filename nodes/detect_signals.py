@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 from analysis.ratios import compute_ratios
-from analysis.rules import detect_signals_from_rules
+from analysis.rules import detect_signals_from_rules, detect_signals_from_donnees
 from models import Signal, TypeSignal, Gravite
 
 PROMPT_LLM = """Tu es expert-comptable senior. Identifie les signaux QUALITATIFS supplémentaires
@@ -29,7 +29,12 @@ def detect_signals(state: dict) -> dict:
     llm = ChatOpenAI(model=os.getenv("LLM_MODEL", "gpt-4o"), temperature=0)
 
     ratios = compute_ratios(donnees)
-    signaux = detect_signals_from_rules(ratios)
+    signaux = detect_signals_from_rules(ratios) + detect_signals_from_donnees(donnees, ratios)
+
+    features = state.get("indicateurs_fec")
+    if features is not None:
+        from analysis.fec_signals import detect_signals_from_fec
+        signaux += detect_signals_from_fec(features, state.get("seuils_overrides") or {})
 
     # Enrichissement LLM
     context = {

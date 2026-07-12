@@ -95,6 +95,31 @@ class TestDetectSignalsNode:
         assert len(result["signaux_detectes"]) > 0
 
 
+class TestFecSignalsWiring:
+    def test_detect_signals_includes_fec_codes(self, donnees_saine):
+        import pandas as pd
+        from unittest.mock import patch, MagicMock
+        from analysis.fec_features import compute_fec_features
+
+        df = pd.DataFrame([{"CompteNum": "641100", "Debit": 60000, "Credit": 0, "EcritureDate": "20240131"}])
+        feat = compute_fec_features(df)  # REMUNERATION_DIRIGEANT_ELEVEE
+
+        with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+            inst = MagicMock()
+            resp = MagicMock(); resp.content = "[]"
+            inst.invoke.return_value = resp
+            mock_cls.return_value = inst
+            from nodes.detect_signals import detect_signals
+            result = detect_signals({
+                "donnees_financieres": donnees_saine,
+                "indicateurs_fec": feat,
+                "seuils_overrides": {},
+            })
+
+        codes = {s.code for s in result["signaux_detectes"]}
+        assert "REMUNERATION_DIRIGEANT_ELEVEE" in codes
+
+
 # ── Node generate_interview_plan ─────────────────────────────────────────────
 
 class TestGenerateInterviewPlanNode:
@@ -171,65 +196,69 @@ class TestGenerateInterviewPlanNode:
         assert fiche.synthese_executive == "Entreprise en bonne santé financière."
 
 
-# ── Node match_missions ────────────────────────────────────────────────────────
+# ── Node match_missions (déterministe) ─────────────────────────────────────────
 
 class TestMatchMissionsNode:
 
-    def test_priority_1_missions_always_included(self, catalogue_path):
-        """Les missions de priorité 1 sont toujours recommandées, même sans signal."""
-        with patch("nodes.match_missions.ChatOpenAI") as mock_cls:
-            mock_cls.return_value = _mock_llm("[]")
-            from nodes.match_missions import match_missions
-            result = match_missions({
-                "signaux_detectes": [],
-                "catalogue_path": catalogue_path,
-            })
+    def _signal(self, code):
+        from models import Signal, TypeSignal, Gravite
+        return Signal(type=TypeSignal.RISQUE, gravite=Gravite.MOYENNE,
+                      code=code, titre=code, description="", levier="")
 
-        ids = [r.mission.id for r in result["missions_recommandees"]]
-        # Au moins une mission de priorité 1 (MISSION_TRESORERIE ou MISSION_AGO)
-        assert len(ids) > 0, "Aucune mission recommandée, les missions priorité 1 manquent"
+    def test_priority_1_missions_always_included(self):
+        """Les missions priorité 1 sont toujours proposées, même sans signal."""
+        from nodes.match_missions import match_missions
+        result = match_missions({"signaux_detectes": []})
+        recos = result["missions_recommandees"]
+        assert any(r.mission.priorite_proposition == 1 for r in recos)
+        assert len(recos) > 0
 
-    def test_sorted_by_score_descending(self, catalogue_path):
+    def test_signal_declenche_mission(self):
+        """Un signal actif déclenche les missions qui le référencent, avec explicabilité."""
+        from nodes.match_missions import match_missions
+        result = match_missions({
+            "signaux_detectes": [self._signal("TRESORERIE_EXCEDENTAIRE"),
+                                 self._signal("HAUSSE_TRESORERIE")],
+        })
+        recos = {r.mission.id: r for r in result["missions_recommandees"]}
+        assert "MISSION_PATRIMOINE_TRESORERIE" in recos
+        assert "TRESORERIE_EXCEDENTAIRE" in recos["MISSION_PATRIMOINE_TRESORERIE"].signaux_declencheurs
+        assert recos["MISSION_PATRIMOINE_TRESORERIE"].argumentaire  # = benefice_client, non vide
+
+    def test_sorted_by_score_descending(self):
         """Les recommandations sont triées par score_pertinence décroissant."""
-        llm_resp = (
-            '[{"mission_id":"MISSION_PREVISIONNEL","score_pertinence":0.9,'
-            '"signaux_declencheurs":[],"argumentaire":"Top","urgence":"court terme"},'
-            '{"mission_id":"MISSION_HOLDING","score_pertinence":0.6,'
-            '"signaux_declencheurs":[],"argumentaire":"Moins top","urgence":"moyen terme"}]'
-        )
-        with patch("nodes.match_missions.ChatOpenAI") as mock_cls:
-            mock_cls.return_value = _mock_llm(llm_resp)
-            from nodes.match_missions import match_missions
-            result = match_missions({
-                "signaux_detectes": [],
-                "catalogue_path": catalogue_path,
-            })
-
+        from nodes.match_missions import match_missions
+        result = match_missions({
+            "signaux_detectes": [self._signal("LIQUIDITE_CRITIQUE"),
+                                 self._signal("DELAI_CLIENTS_ELEVE")],
+        })
         scores = [r.score_pertinence for r in result["missions_recommandees"]]
         assert scores == sorted(scores, reverse=True)
 
-    def test_rejects_unknown_mission_ids(self, catalogue_path):
-        """Les IDs de missions inconnus retournés par le LLM sont ignorés."""
-        llm_resp = (
-            '[{"mission_id":"MISSION_INEXISTANTE","score_pertinence":0.9,'
-            '"signaux_declencheurs":[],"argumentaire":"?","urgence":"immédiate"}]'
-        )
-        with patch("nodes.match_missions.ChatOpenAI") as mock_cls:
-            mock_cls.return_value = _mock_llm(llm_resp)
-            from nodes.match_missions import match_missions
-            result = match_missions({
-                "signaux_detectes": [],
-                "catalogue_path": catalogue_path,
-            })
+    def test_unknown_signal_code_ignored(self):
+        """Un code signal inconnu du référentiel ne fait pas planter le matching."""
+        from nodes.match_missions import match_missions
+        result = match_missions({"signaux_detectes": [self._signal("CODE_BIDON_XYZ")]})
+        assert "missions_recommandees" in result
 
-        ids = [r.mission.id for r in result["missions_recommandees"]]
-        assert "MISSION_INEXISTANTE" not in ids
-
-    def test_security_rejects_path_traversal(self, tmp_path):
-        """Le chargement du catalogue refuse les chemins traversaux (path traversal)."""
+    def test_security_rejects_path_traversal(self):
+        """Le chargement du catalogue refuse les chemins traversaux."""
+        import pytest
         from nodes.match_missions import match_missions
         with pytest.raises(ValueError, match="outside the allowed"):
-            match_missions({
-                "signaux_detectes": [],
-                "catalogue_path": "../../../etc/passwd",
-            })
+            match_missions({"signaux_detectes": [], "catalogue_path": "../../../etc/passwd"})
+
+    def test_priority1_never_outranked_by_priority2(self):
+        """Une priorité-1 n'est jamais surclassée par une priorité-2 très déclenchée."""
+        from nodes.match_missions import match_missions
+        codes = ["LIQUIDITE_CRITIQUE", "DELAI_CLIENTS_ELEVE", "DECOUVERT_RECURRENT",
+                 "DESEQUILIBRE_BFR", "SAISONNALITE_FORTE", "FRAIS_FINANCIERS_EN_HAUSSE",
+                 "ENDETTEMENT_EXCESSIF", "PRESENCE_SALARIES"]
+        result = match_missions({"signaux_detectes": [self._signal(c) for c in codes]})
+        recos = result["missions_recommandees"]
+        seen_p2 = False
+        for r in recos:
+            if r.mission.priorite_proposition >= 2:
+                seen_p2 = True
+            elif r.mission.priorite_proposition == 1:
+                assert not seen_p2, f"P1 {r.mission.id} classée après une P2"

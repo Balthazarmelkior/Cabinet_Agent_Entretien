@@ -24,14 +24,38 @@ def _somme(df: pd.DataFrame, racines: list[str]) -> float:
     return float(df[mask]["Montant"].sum())
 
 
+def _detect_sep(fec_path: str, encoding: str) -> str:
+    with open(fec_path, encoding=encoding) as f:
+        header = f.readline()
+    # La norme FEC autorise tab ou pipe ; certains exports utilisent ;
+    return max(("\t", "|", ";"), key=header.count)
+
+
 def _load_df(fec_path: str) -> pd.DataFrame:
+    encoding = "latin1"
+    try:
+        with open(fec_path, "rb") as f:
+            f.read().decode("utf-8")
+        encoding = "utf-8-sig"
+    except UnicodeDecodeError:
+        pass
+
     df = pd.read_csv(
         fec_path,
-        sep="\t",
-        encoding="latin1",
+        sep=_detect_sep(fec_path, encoding),
+        encoding=encoding,
         dtype={"CompteNum": str, "EcritureDate": str, "Montant": str},
         decimal=","
     )
+    df.columns = df.columns.str.strip()
+    df = df.rename(columns={"Débit": "Debit", "Crédit": "Credit"})
+
+    missing = {"CompteNum"} - set(df.columns)
+    if missing or ("Montant" not in df.columns and {"Debit", "Credit"} - set(df.columns)):
+        raise ValueError(
+            f"Fichier FEC invalide : colonnes attendues absentes "
+            f"(colonnes lues : {list(df.columns)[:8]}...)"
+        )
 
     if "Montant" not in df.columns:
         for col in ("Debit", "Credit"):

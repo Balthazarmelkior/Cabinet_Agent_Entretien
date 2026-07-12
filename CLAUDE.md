@@ -29,9 +29,10 @@ streamlit run app/main.py
 | `INSEE_API_KEY` | No | — | INSEE Esane API (benchmark fallback) |
 | `LLM_MODEL` | No | `gpt-4o` | LLM model to use |
 | `EMBEDDING_MODEL` | No | `text-embedding-3-small` | RAG embeddings |
-| `CATALOGUE_PATH` | No | `data/catalogue_missions.json` | Mission catalog location |
+| `CATALOGUE_PATH` | No | `data/catalogue_missions_tyls.json` | Mission catalog location |
 | `BDF_CACHE_DIR` | No | `data/bdf_cache` | Banque de France API cache |
 | `RAG_THRESHOLD` | No | `50` | Catalog size above which RAG is used instead of direct LLM matching |
+| `SEUILS_PATH` | No | `data/seuils_signaux.json` | Référentiel des signaux FEC (matcher déterministe) |
 
 ## Architecture
 
@@ -76,18 +77,17 @@ Three-source **fallback chain** managed by `BenchmarkOrchestrator`:
 ### Signal Detection (`nodes/detect_signals.py`)
 
 1. Computes `Ratios` from `DonneesFinancieres` (`analysis/ratios.py`)
-2. Applies deterministic rule-based detection (`analysis/rules.py`) — 10 rules covering EBE, debt, liquidity, client delays, BFR, etc.
+2. Applies deterministic rule-based detection (`analysis/rules.py`): `detect_signals_from_rules(ratios)` (ratio-based) + `detect_signals_from_donnees(donnees, ratios)` (absolute-amount signals: treasury, equity, salary mass, etc.). Codes are aligned with `data/seuils_signaux.json`.
 3. Enriches with GPT-4o for qualitative/soft signals (sectoral, governance, regulatory)
 4. Sorts by severity descending
 
-To add a new deterministic signal: add a rule function in `analysis/rules.py` following the existing pattern and append it to the rules list.
+To add a new deterministic signal: add a check emitting the referential's code in `detect_signals_from_rules` (ratio-only) or `detect_signals_from_donnees` (needs absolute amounts), following the existing pattern.
 
-### Mission Matching (`matching/`)
+### Mission Matching (`nodes/match_missions.py` + `matching/mission_matcher.py`)
 
-- **≤50 missions** (`llm_matcher.py`): All missions passed directly to GPT-4o for scoring (0.0–1.0).
-- **>50 missions** (`rag_matcher.py`): Chroma vectorstore retrieves top-k candidates per signal, then LLM scores the shortlist.
+Deterministic, no LLM. `MissionMatcher` loads the catalog + the signal referential (`data/seuils_signaux.json`) and triggers each mission whose `codes_signaux` intersect the active signal codes, scored by the number of triggering signals and sorted by `(priorité, score)`. Priority-1 missions are always proposed even without a triggering signal. `_verifier_coherence` guarantees every code referenced by a mission exists in the referential.
 
-The threshold is controlled by `RAG_THRESHOLD` env variable. The mission catalog lives in `data/catalogue_missions.json`.
+The catalog lives in `data/catalogue_missions_tyls.json`, the referential in `data/seuils_signaux.json` (overridable via `CATALOGUE_PATH` / `SEUILS_PATH`). The legacy LLM/RAG matchers (`matching/llm_matcher.py`, `matching/rag_matcher.py`, `RAG_THRESHOLD`) remain on disk but are no longer wired into the pipeline.
 
 ### Interview Plan Generation (`nodes/generate_interview_plan.py`)
 
@@ -116,7 +116,7 @@ pytest tests/test_specific.py  # single test file
 
 ## Mission Catalog Format
 
-Missions in `data/catalogue_missions.json` follow this schema:
+Missions in `data/catalogue_missions_tyls.json` follow this schema:
 
 ```json
 {

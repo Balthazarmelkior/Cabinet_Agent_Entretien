@@ -163,13 +163,11 @@ def test_full_pipeline_match_missions(catalogue_path):
         ratios = compute_ratios(donnees)
         signaux = detect_signals_from_rules(ratios)
 
-        with patch("nodes.match_missions.ChatOpenAI") as mock_cls:
-            mock_cls.return_value = _mock_llm("[]")
-            from nodes.match_missions import match_missions
-            match_state = match_missions({
-                "signaux_detectes": signaux,
-                "catalogue_path": catalogue_path,
-            })
+        from nodes.match_missions import match_missions
+        match_state = match_missions({
+            "signaux_detectes": signaux,
+            "catalogue_path": catalogue_path,
+        })
 
         assert "missions_recommandees" in match_state
         assert len(match_state["missions_recommandees"]) > 0
@@ -200,16 +198,14 @@ def test_end_to_end_all_nodes_sequential(catalogue_path):
 
     try:
         with patch("nodes.detect_signals.ChatOpenAI") as m1, \
-             patch("nodes.match_missions.ChatOpenAI") as m2, \
-             patch("nodes.generate_interview_plan.ChatOpenAI") as m3, \
+             patch("nodes.generate_interview_plan.ChatOpenAI") as m2, \
              patch("nodes.benchmark_sectoriel.ChatOpenAI"), \
              patch("benchmark.sources.bdf.BanqueDeFranceSource.fetch",
                    return_value=mock_bdf), \
              patch("benchmark.sources.insee.InseeSource.fetch", return_value=None):
 
             m1.return_value = _mock_llm("[]")
-            m2.return_value = _mock_llm("[]")
-            m3.return_value = _mock_llm(PLAN_JSON)
+            m2.return_value = _mock_llm(PLAN_JSON)
 
             from nodes.extract_financial_data import extract_financial_data
             from nodes.detect_signals import detect_signals
@@ -231,6 +227,112 @@ def test_end_to_end_all_nodes_sequential(catalogue_path):
         assert isinstance(fiche.elements_a_recueillir, list)
     finally:
         os.unlink(tmp)
+
+
+def test_fec_signals_drive_missions(catalogue_path, donnees_saine):
+    """Un FEC synthétique famille A (rémunération, 455 créditeur, pénalités) produit
+    des signaux FEC qui déclenchent les missions catalogue correspondantes."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    df = pd.DataFrame([
+        {"CompteNum": "641100", "Debit": 60000, "Credit": 0, "EcritureDate": "20240131"},
+        {"CompteNum": "4551",   "Debit": 0, "Credit": 90000, "EcritureDate": "20240131"},
+        {"CompteNum": "671200", "Debit": 800, "Credit": 0, "EcritureDate": "20240201"},
+    ])
+    feat = compute_fec_features(df)
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    codes = {sig.code for sig in s["signaux_detectes"]}
+    assert {"REMUNERATION_DIRIGEANT_ELEVEE", "COMPTE_COURANT_CREDITEUR_ELEVE", "PENALITES_FISCALES"} <= codes
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_PROTECTION_STATUT_SOCIAL" in ids           # rémunération dirigeant
+    assert "MISSION_COMPTA_PACK_SERENITE" in ids               # pénalités fiscales
+
+
+def test_fournisseurs_drive_facture_electronique(catalogue_path, donnees_saine):
+    """Un FEC synthétique avec 55 fournisseurs distincts déclenche NOMBREUX_FOURNISSEURS
+    et la mission catalogue associée."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    rows = [{"CompteNum": "401000", "Debit": 0, "Credit": 100,
+             "EcritureDate": "20240115", "CompAuxNum": f"F{i:03}", "JournalCode": "AC"}
+            for i in range(55)]
+    feat = compute_fec_features(pd.DataFrame(rows))
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    assert "NOMBREUX_FOURNISSEURS" in {sig.code for sig in s["signaux_detectes"]}
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_COMPTA_FX_MISE_EN_PLACE" in ids
+
+
+def test_quickwins_signals_drive_missions(catalogue_path, donnees_saine):
+    """Un FEC synthétique déclenche des signaux quick-wins (2c) qui pilotent
+    les missions catalogue correspondantes."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    df = pd.DataFrame([
+        {"CompteNum": "706000", "Debit": 0, "Credit": 365000, "EcritureDate": "20240630"},
+        {"CompteNum": "411000", "Debit": 30000, "Credit": 0, "EcritureDate": "20240630"},  # DSO 30j
+    ])
+    feat = compute_fec_features(df)
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    codes = {sig.code for sig in s["signaux_detectes"]}
+    assert {"DELAI_FACTURATION_LONG", "SEUIL_TVA_MICRO_DEPASSE"} <= codes
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_COMPTA_FX_EXTERNALISATION" in ids           # délai facturation long
+    assert "MISSION_AVOCATS_CREATION" in ids                    # seuil TVA/micro
+
+
+def test_monthly_signals_drive_missions(catalogue_path, donnees_saine):
+    """Un FEC synthétique 12 mois (découvert récurrent + CA saisonnier) déclenche
+    les signaux mensuels 2d et la mission prévisionnel de trésorerie."""
+    import pandas as pd
+    from analysis.fec_features import compute_fec_features
+    from nodes.detect_signals import detect_signals
+    from nodes.match_missions import match_missions
+
+    rows = []
+    for m in range(1, 13):
+        ca = 120000 if m % 2 else 10000                       # CA très saisonnier
+        rows.append({"CompteNum": "706000", "Debit": 0, "Credit": ca, "EcritureDate": f"2024{m:02}15"})
+        rows.append({"CompteNum": "519000", "Debit": 0, "Credit": 4000, "EcritureDate": f"2024{m:02}20"})
+    feat = compute_fec_features(pd.DataFrame(rows))
+
+    with patch("nodes.detect_signals.ChatOpenAI") as mock_cls:
+        mock_cls.return_value = _mock_llm("[]")
+        s = detect_signals({"donnees_financieres": donnees_saine, "indicateurs_fec": feat, "seuils_overrides": {}})
+
+    codes = {sig.code for sig in s["signaux_detectes"]}
+    assert {"DECOUVERT_RECURRENT", "SAISONNALITE_FORTE"} <= codes
+
+    m = match_missions({**s, "catalogue_path": catalogue_path})
+    ids = {r.mission.id for r in m["missions_recommandees"]}
+    assert "MISSION_PILOTAGE_PREVISIONNEL_TRESO" in ids
 
 
 # ── Tests de robustesse ────────────────────────────────────────────────────────
