@@ -211,7 +211,7 @@ jobs:
           sleep 30
           
           for i in {1..10}; do
-            if curl -sf "${URL}/api/v1/health"; then
+            if curl -sf "${URL}/_stcore/health"; then
               echo "Health check passed!"
               exit 0
             fi

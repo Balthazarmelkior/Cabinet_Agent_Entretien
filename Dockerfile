@@ -1,6 +1,6 @@
 # ==============================================================================
 # Dockerfile multi-stage - Cabinet Agent Entretien
-# Target: Azure Container Apps (FastAPI mode)
+# Target: Azure Container Apps (Streamlit UI)
 # ==============================================================================
 
 # -----------------------------------------------------------------------------
@@ -61,12 +61,12 @@ EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+    CMD curl -f http://localhost:8000/_stcore/health || exit 1
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000
 
-# Default command (FastAPI mode)
-CMD ["uvicorn", "rdv_bilan_ia.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command (Streamlit UI)
+CMD ["streamlit", "run", "app/main.py", "--server.port=8000", "--server.address=0.0.0.0", "--server.headless=true"]
