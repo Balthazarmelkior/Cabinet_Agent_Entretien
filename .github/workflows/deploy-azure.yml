@@ -171,27 +171,37 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Deploy to Container Apps
-        uses: azure/container-apps-deploy-action@v2
-        with:
-          acrName: ${{ secrets.ACR_NAME }}
-          acrUsername: ${{ secrets.ACR_USERNAME }}
-          acrPassword: ${{ secrets.ACR_PASSWORD }}
-          containerAppName: ${{ secrets.ACA_NAME }}
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          containerAppEnvironment: ${{ secrets.ACA_ENVIRONMENT }}
-          imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          targetPort: 8000
-          ingress: external
-          envVars: |
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            PERPLEXITY_API_KEY=${{ secrets.PERPLEXITY_API_KEY }}
-            GAMMA_API_KEY=${{ secrets.GAMMA_API_KEY }}
-            INSEE_API_KEY=${{ secrets.INSEE_API_KEY }}
-            LLM_MODEL=gpt-4o
-          cpu: 1.0
-          memory: 2.0Gi
-          minReplicas: 1
-          maxReplicas: 3
+        run: |
+          az extension add --name containerapp --upgrade --only-show-errors
+
+          az containerapp secret set \
+            --name ${{ secrets.ACA_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --secrets \
+              openai-api-key=${{ secrets.OPENAI_API_KEY }} \
+              perplexity-api-key=${{ secrets.PERPLEXITY_API_KEY }} \
+              gamma-api-key=${{ secrets.GAMMA_API_KEY }} \
+              insee-api-key=${{ secrets.INSEE_API_KEY }}
+
+          az containerapp registry set \
+            --name ${{ secrets.ACA_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --server ${{ env.REGISTRY }} \
+            --username ${{ secrets.ACR_USERNAME }} \
+            --password ${{ secrets.ACR_PASSWORD }}
+
+          az containerapp update \
+            --name ${{ secrets.ACA_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --set-env-vars \
+              OPENAI_API_KEY=secretref:openai-api-key \
+              PERPLEXITY_API_KEY=secretref:perplexity-api-key \
+              GAMMA_API_KEY=secretref:gamma-api-key \
+              INSEE_API_KEY=secretref:insee-api-key \
+              LLM_MODEL=gpt-4o \
+            --cpu 1.0 --memory 2.0Gi \
+            --min-replicas 1 --max-replicas 3
       
       - name: Get Container App URL
         id: url
