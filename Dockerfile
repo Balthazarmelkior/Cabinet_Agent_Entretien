@@ -69,4 +69,6 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000
 
 # Default command (Streamlit UI)
-CMD ["streamlit", "run", "app/main.py", "--server.port=8000", "--server.address=0.0.0.0", "--server.headless=true"]
+# enableCORS/enableXsrfProtection off : derrière l'ingress ACA (reverse proxy),
+# la protection XSRF bloque silencieusement l'upload de fichiers
+CMD ["streamlit", "run", "app/main.py", "--server.port=8000", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableCORS=false", "--server.enableXsrfProtection=false", "--browser.gatherUsageStats=false"]
