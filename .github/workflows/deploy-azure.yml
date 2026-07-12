@@ -67,9 +67,6 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-asyncio pytest-cov
       
-      - name: Download spaCy model
-        run: python -m spacy download fr_core_news_md
-      
       - name: Run tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
