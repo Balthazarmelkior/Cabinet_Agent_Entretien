@@ -188,6 +188,61 @@ uvicorn rdv_bilan_ia.app.main:app --reload
 
 ---
 
+## Déploiement Azure (production)
+
+L'app tourne en production sur **Azure Container Apps**, déployée automatiquement
+à chaque push sur `main` via GitHub Actions (`.github/workflows/deploy-azure.yml`).
+
+### Accéder à l'app
+
+Ouvre simplement l'URL dans un navigateur (aucune installation requise) :
+
+```
+https://aca-entretienbilan-ia.salmonocean-5796c2ca.westeurope.azurecontainerapps.io
+```
+
+C'est la même UI Streamlit que le mode local (`streamlit run app/main.py`) — les
+7 onglets (Benchmark, Analyse sectorielle, Trésorerie, Évolution N/N-1, Signaux,
+Missions, Fiche entretien, Slides Gamma) sont identiques. Voir
+[Utilisation — Streamlit](#utilisation--streamlit) ci-dessous.
+
+### Mettre à jour la version en production
+
+Rien à faire manuellement : un `git push` sur `main` déclenche le pipeline
+(tests → build de l'image Docker → push sur Azure Container Registry → déploiement
+sur Container Apps → health check). Suivre l'avancement :
+
+```bash
+gh run list -R Balthazarmelkior/Cabinet_Agent_Entretien -L 5
+gh run watch <run-id> -R Balthazarmelkior/Cabinet_Agent_Entretien
+```
+
+Ou directement dans l'onglet **Actions** du repo GitHub.
+
+### Ressources Azure (groupe de ressources `rg-entretienbilan-ia`, West Europe)
+
+| Ressource | Nom | Rôle |
+|-----------|-----|------|
+| Container App | `aca-entretienbilan-ia` | Héberge l'app Streamlit (port 8000, ingress externe) |
+| Container Apps Environment | `aca-env-entretienbilan-ia` | Environnement d'exécution + logs |
+| Container Registry | `acrentretienbilania` | Stocke les images Docker buildées par la CI |
+
+### Authentification CI/CD
+
+Le workflow s'authentifie à Azure en **OIDC** (federated identity, pas de secret
+client stocké) via l'App Azure AD `3aa682e8-dc10-4e29-a5c2-a953fc848aca`, avec
+Contributor sur le groupe de ressources et AcrPush sur le registre. Secrets GitHub
+requis : voir l'en-tête de `.github/workflows/deploy-azure.yml`.
+
+### Debug / logs production
+
+```bash
+az containerapp logs show --name aca-entretienbilan-ia -g rg-entretienbilan-ia --tail 100
+az containerapp revision list --name aca-entretienbilan-ia -g rg-entretienbilan-ia -o table
+```
+
+---
+
 ## Utilisation — Streamlit
 
 1. Déposer le fichier FEC (`.txt` / `.csv`) ou bilan PDF
