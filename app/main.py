@@ -22,7 +22,15 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display&display=swap');
 
-*, body { font-family: 'DM Sans', sans-serif !important; }
+/* Police globale — sans écraser les polices d'icônes (Material Symbols) */
+html, body, p, div, span, label, input, button, textarea, select, li, td, th, small {
+    font-family: 'DM Sans', sans-serif;
+}
+[data-testid="stIconMaterial"],
+[class*="material-symbols"], [class*="material-icons"],
+[data-testid="stExpanderToggleIcon"], [data-testid="stFileUploaderDeleteBtn"] span {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Icons' !important;
+}
 h1, h2, h3 { font-family: 'DM Serif Display', serif !important; }
 
 [data-testid="stAppViewContainer"] { background: #F2F4F8; }
@@ -89,6 +97,9 @@ h1, h2, h3 { font-family: 'DM Serif Display', serif !important; }
 .badge-blue  {background:#DBEAFE;color:#1D4ED8;}
 .badge-green {background:#D1FAE5;color:#065F46;}
 .badge-score {background:#EEF2FF;color:#3730A3;}
+.badge-grey  {background:#F1F5F9;color:#334155;border:1px solid #E2E8F0;}
+.mission-declencheurs{color:#64748B;font-size:.75rem;margin-top:.45rem;display:flex;
+    gap:.35rem;flex-wrap:wrap;align-items:center;}
 
 /* Overrides Streamlit */
 .stButton>button{border-radius:8px !important;font-weight:600 !important;}
@@ -96,31 +107,30 @@ div[data-testid="stMetric"]{background:white;border-radius:12px;padding:.8rem;bo
 [data-testid="stTab"] button{font-size:.88rem !important;}
 .stDownloadButton>button{background:#0F2044 !important;color:white !important;border-radius:8px !important;font-weight:600 !important;}
 
-/* File uploader — fix duplicated button text */
-[data-testid="stFileUploaderDropzone"] button,
-[data-testid="stFileUploader"] button {
-    color:transparent !important;
-    overflow:hidden !important;
-    max-width:6rem !important;
-    padding:.45rem 1rem !important;
-    border-radius:6px !important;
-    position:relative !important;
+/* File uploader — libellés en français, sans positionnement absolu */
+[data-testid="stFileUploaderDropzone"] {
+    background:white; border:1px dashed #CBD5E1; border-radius:10px;
 }
-[data-testid="stFileUploaderDropzone"] button *,
-[data-testid="stFileUploader"] button * {
-    color:transparent !important;
-    font-size:0 !important;
+[data-testid="stFileUploaderDropzone"] button {
+    font-size:0 !important; color:transparent !important;
+    padding:.5rem 1.1rem !important; border-radius:6px !important;
+    flex-shrink:0;
 }
-[data-testid="stFileUploaderDropzone"] button::after,
-[data-testid="stFileUploader"] button::after {
+[data-testid="stFileUploaderDropzone"] button::after {
     content:"Parcourir";
-    position:absolute !important;
-    top:50%;left:50%;
-    transform:translate(-50%,-50%);
-    color:#0F2044 !important;
-    font-size:.84rem !important;
-    font-weight:500;
-    white-space:nowrap;
+    display:inline-block;
+    font-size:.84rem; line-height:1.2;
+    color:#0F2044; font-weight:500; white-space:nowrap;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] > div > span { display:none; }
+[data-testid="stFileUploaderDropzoneInstructions"] > div::before {
+    content:"Glissez-déposez le fichier ici";
+    display:block; font-size:.84rem; font-weight:500; color:#334155;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] > div > small { display:none; }
+[data-testid="stFileUploaderDropzoneInstructions"] > div::after {
+    content:"200 Mo max par fichier";
+    display:block; font-size:.72rem; color:#94A3B8; margin-top:.15rem;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -543,10 +553,11 @@ def render_dashboard():
         if not missions:
             st.info("Aucune mission recommandée.")
         else:
+            signaux_by_code = {s.code: s for s in signaux if s.code}
             c_left, c_right = st.columns(2, gap="large")
             for i, reco in enumerate(missions):
                 with (c_left if i % 2 == 0 else c_right):
-                    render_mission(reco)
+                    render_mission(reco, signaux_by_code)
 
     # ── Fiche entretien ───────────────────────────────────────────────────────
     with t_fiche:
@@ -782,8 +793,10 @@ def render_dashboard():
 
             st.link_button("🔗 Ouvrir la présentation Gamma", slides_url, use_container_width=True)
 
+            # Format embed Gamma : gamma.app/embed/<id> (l'URL API est gamma.app/docs/<id>)
+            embed_url = slides_url.replace("/docs/", "/embed/")
             st.markdown(f"""
-            <iframe src="{slides_url}/embed" width="100%" height="500"
+            <iframe src="{embed_url}" width="100%" height="500"
                     frameborder="0" style="border-radius:12px;margin-top:1rem;"
                     allowfullscreen></iframe>
             """, unsafe_allow_html=True)

@@ -53,10 +53,13 @@ def anonymize_fec_df(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     if "CompAuxNum" in df.columns:
-        df.loc[mask_tiers, "CompAuxNum"] = df.loc[mask_tiers, "CompteNum"]
+        # Colonne vide inférée float64 par pandas — cast avant d'y écrire des str
+        df["CompAuxNum"] = df["CompAuxNum"].astype("string")
+        df.loc[mask_tiers, "CompAuxNum"] = df.loc[mask_tiers, "CompteNum"].astype("string")
 
     for col in ("CompteLib", "CompAuxLib"):
         if col in df.columns:
+            df[col] = df[col].astype("string")
             df.loc[mask_tiers, col] = "***"
 
     return df

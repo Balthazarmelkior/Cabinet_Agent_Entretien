@@ -209,3 +209,73 @@ def test_synthetic_fec_groups_multiple_entries_same_account():
         assert result.chiffre_affaires.montant_n == 500_000.0  # 300k + 200k
     finally:
         os.unlink(tmp)
+
+
+# ── Séparateurs et encodages alternatifs ──────────────────────────────────────
+
+def _write_fec_variant(sep: str, encoding: str, debit_col: str = "Debit",
+                       credit_col: str = "Credit") -> str:
+    """FEC synthétique Debit/Credit avec séparateur et encodage paramétrables."""
+    cols = ["JournalCode", "JournalLib", "EcritureNum", "EcritureDate", "CompteNum",
+            "CompteLib", "CompAuxNum", "CompAuxLib", "PieceRef", "PieceDate",
+            "EcritureLib", debit_col, credit_col]
+    rows = [
+        ("701000", "0,00", "500000,00"),
+        ("411000", "500000,00", "0,00"),
+    ]
+    lines = [sep.join(cols) + "\n"]
+    for i, (compte, debit, credit) in enumerate(rows):
+        lines.append(sep.join([
+            "VT", "Ventes", f"{i:06d}", "20240101", compte, "Lib", "", "",
+            f"P{i}", "20240101", "Ecr", debit, credit,
+        ]) + "\n")
+    f = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".txt", delete=False, encoding=encoding
+    )
+    f.writelines(lines)
+    f.close()
+    return f.name
+
+
+@pytest.mark.parametrize("sep,encoding", [
+    ("|", "latin1"),
+    (";", "latin1"),
+    ("\t", "utf-8-sig"),
+])
+def test_fec_alternate_separators_and_encodings(sep, encoding):
+    """La norme FEC autorise tab ou pipe ; certains exports utilisent ; ou UTF-8 BOM."""
+    from parsers.fec_parser import _load_df
+
+    tmp = _write_fec_variant(sep, encoding)
+    try:
+        df = _load_df(tmp)
+        assert "Montant" in df.columns
+        assert float(df[df["CompteNum"] == "701000"]["Montant"].iloc[0]) == 500_000.0
+    finally:
+        os.unlink(tmp)
+
+
+def test_fec_accented_debit_credit_columns():
+    """Colonnes 'Débit'/'Crédit' accentuées normalisées vers Debit/Credit."""
+    from parsers.fec_parser import _load_df
+
+    tmp = _write_fec_variant("\t", "utf-8", debit_col="Débit", credit_col="Crédit")
+    try:
+        df = _load_df(tmp)
+        assert float(df[df["CompteNum"] == "701000"]["Montant"].iloc[0]) == 500_000.0
+    finally:
+        os.unlink(tmp)
+
+
+def test_fec_invalid_file_raises_clear_error():
+    """Fichier sans colonnes FEC → ValueError explicite, pas KeyError."""
+    from parsers.fec_parser import _load_df
+
+    f = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="latin1")
+    f.write("foo;bar\n1;2\n")
+    f.close()
+    try:
+        with pytest.raises(ValueError, match="colonnes attendues absentes"):
+            _load_df(f.name)
+    finally:
+        os.unlink(f.name)
